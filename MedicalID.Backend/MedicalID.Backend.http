@@ -1,0 +1,6 @@
+@MedicalID.Backend_HostAddress = http://localhost:5150
+
+GET {{MedicalID.Backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
