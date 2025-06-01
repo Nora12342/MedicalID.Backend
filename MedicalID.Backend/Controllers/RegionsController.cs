@@ -30,6 +30,31 @@ namespace MedicalID.Backend.Controllers
 
             return Ok(regions);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateRegion(int id, RegionGetDto dto)
+        {
+            var region = await _context.Regions.FindAsync(id);
+            if (region == null) return NotFound();
+
+            region.Name = dto.Name;
+            // map other properties if exist
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteRegion(int id)
+        {
+            var region = await _context.Regions.FindAsync(id);
+            if (region == null) return NotFound();
+
+            _context.Regions.Remove(region);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
     }
 
 

@@ -137,6 +137,18 @@ namespace MedicalID.Backend.Controllers
 
             return Ok("Patient registered successfully.");
         }
+
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            // If you store refresh tokens server-side, revoke them here (optional)
+            // Example:
+            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            // _authService.RevokeRefreshToken(userId);
+
+            // For stateless JWT, just return success and client deletes token
+            return Ok(new { message = "Logout successful" });
+        }
     }
 }
 

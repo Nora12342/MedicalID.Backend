@@ -35,11 +35,11 @@ namespace MedicalID.Backend.Migrations
 
                     b.Property<string>("DoctorID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<string>("PatientID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<string>("Purpose")
                         .IsRequired()
@@ -57,7 +57,7 @@ namespace MedicalID.Backend.Migrations
             modelBuilder.Entity("MedicalID.Backend.Models.Allergy", b =>
                 {
                     b.Property<string>("PatientID")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<string>("Allergen")
                         .HasColumnType("nvarchar(450)");
@@ -78,14 +78,18 @@ namespace MedicalID.Backend.Migrations
             modelBuilder.Entity("MedicalID.Backend.Models.AskDoctor", b =>
                 {
                     b.Property<string>("PatientID")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<int>("MessageID")
                         .HasColumnType("int");
 
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("DoctorID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<string>("Question")
                         .IsRequired()
@@ -105,7 +109,7 @@ namespace MedicalID.Backend.Migrations
 
                     b.HasIndex("DoctorID");
 
-                    b.ToTable("AskDoctor");
+                    b.ToTable("AskDoctors");
                 });
 
             modelBuilder.Entity("MedicalID.Backend.Models.City", b =>
@@ -119,13 +123,14 @@ namespace MedicalID.Backend.Migrations
 
                     b.HasKey("CityID");
 
-                    b.ToTable("City");
+                    b.ToTable("Cities");
                 });
 
             modelBuilder.Entity("MedicalID.Backend.Models.Doctor", b =>
                 {
                     b.Property<string>("DoctorID")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(14)
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -139,17 +144,30 @@ namespace MedicalID.Backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("RegionID")
+                    b.Property<string>("PasswordHash")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Phone")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RegionID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RegionID1")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Specialization")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("DoctorID");
 
-                    b.HasIndex("RegionID");
+                    b.HasIndex("RegionID1");
 
                     b.ToTable("Doctors");
                 });
@@ -171,13 +189,13 @@ namespace MedicalID.Backend.Migrations
 
                     b.HasIndex("RegionID");
 
-                    b.ToTable("Hospital");
+                    b.ToTable("Hospitals");
                 });
 
             modelBuilder.Entity("MedicalID.Backend.Models.MedicalCondition", b =>
                 {
                     b.Property<string>("PatientID")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<int>("MedConditionID")
                         .HasColumnType("int");
@@ -220,7 +238,7 @@ namespace MedicalID.Backend.Migrations
 
                     b.Property<string>("PatientID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<DateTime?>("PrescribedDate")
                         .HasColumnType("datetime2");
@@ -235,7 +253,8 @@ namespace MedicalID.Backend.Migrations
             modelBuilder.Entity("MedicalID.Backend.Models.Patient", b =>
                 {
                     b.Property<string>("PatientID")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(14)
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<string>("BloodType")
                         .IsRequired()
@@ -252,6 +271,10 @@ namespace MedicalID.Backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("LName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -263,12 +286,23 @@ namespace MedicalID.Backend.Migrations
                     b.Property<bool>("OrganDonorStatus")
                         .HasColumnType("bit");
 
-                    b.Property<string>("RegionID")
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RegionID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RegionID1")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("PatientID");
 
-                    b.HasIndex("RegionID");
+                    b.HasIndex("RegionID1");
 
                     b.ToTable("Patients");
                 });
@@ -276,7 +310,7 @@ namespace MedicalID.Backend.Migrations
             modelBuilder.Entity("MedicalID.Backend.Models.RecordHistory", b =>
                 {
                     b.Property<string>("PatientID")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<int>("RecordID")
                         .HasColumnType("int");
@@ -290,7 +324,7 @@ namespace MedicalID.Backend.Migrations
 
                     b.Property<string>("DoctorID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -301,7 +335,7 @@ namespace MedicalID.Backend.Migrations
 
                     b.HasIndex("DoctorID");
 
-                    b.ToTable("RecordHistory");
+                    b.ToTable("RecordHistories");
                 });
 
             modelBuilder.Entity("MedicalID.Backend.Models.Region", b =>
@@ -321,7 +355,7 @@ namespace MedicalID.Backend.Migrations
 
                     b.HasIndex("CityID");
 
-                    b.ToTable("Region");
+                    b.ToTable("Regions");
                 });
 
             modelBuilder.Entity("MedicalID.Backend.Models.AccessLog", b =>
@@ -377,9 +411,7 @@ namespace MedicalID.Backend.Migrations
                 {
                     b.HasOne("MedicalID.Backend.Models.Region", "Region")
                         .WithMany("Doctors")
-                        .HasForeignKey("RegionID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("RegionID1");
 
                     b.Navigation("Region");
                 });
@@ -419,9 +451,11 @@ namespace MedicalID.Backend.Migrations
 
             modelBuilder.Entity("MedicalID.Backend.Models.Patient", b =>
                 {
-                    b.HasOne("MedicalID.Backend.Models.Region", null)
+                    b.HasOne("MedicalID.Backend.Models.Region", "Region")
                         .WithMany("Patients")
-                        .HasForeignKey("RegionID");
+                        .HasForeignKey("RegionID1");
+
+                    b.Navigation("Region");
                 });
 
             modelBuilder.Entity("MedicalID.Backend.Models.RecordHistory", b =>

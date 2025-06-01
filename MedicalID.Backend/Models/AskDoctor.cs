@@ -14,5 +14,6 @@
         public string Response { get; set; }
         public DateTime SentAt { get; set; } = DateTime.UtcNow;
         public DateTime? RepliedAt { get; set; }
+        public string Answer { get;  set; }
     }
 }

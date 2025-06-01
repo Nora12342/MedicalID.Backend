@@ -20,6 +20,8 @@ namespace MedicalID.Backend.Models
         public ICollection<RecordHistory> RecordHistories { get; set; }
         public ICollection<AskDoctor> AskDoctors { get; set; }
         public string UserName { get;  set; }
-        public object PasswordHash { get;  set; }
+        public string PasswordHash { get; set; }
+
+        public int Phone { get;  set; }
     }
 }

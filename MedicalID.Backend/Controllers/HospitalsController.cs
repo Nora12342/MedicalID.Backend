@@ -22,5 +22,31 @@ namespace MedicalID.Backend.Controllers
         {
             return await _context.Hospitals.ToListAsync();
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateHospital(int id, Hospital dto)
+        {
+            var hospital = await _context.Hospitals.FindAsync(id);
+            if (hospital == null) return NotFound();
+
+            hospital.Name = dto.Name;
+            hospital.Region = dto.Region;
+            hospital.RegionID = dto.RegionID;
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteHospital(int id)
+        {
+            var hospital = await _context.Hospitals.FindAsync(id);
+            if (hospital == null) return NotFound();
+
+            _context.Hospitals.Remove(hospital);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
     }
 }

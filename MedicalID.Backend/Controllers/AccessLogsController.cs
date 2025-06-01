@@ -54,5 +54,33 @@ namespace MedicalID.Backend.Controllers
 
             return CreatedAtAction(nameof(GetAccessLogs), new { id = log.LogID }, log);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAccessLog(int id, AccessLogPostDto dto)
+        {
+            var log = await _context.AccessLogs.FindAsync(id);
+            if (log == null) return NotFound();
+
+            log.PatientID = dto.PatientID;
+            log.DoctorID = dto.DoctorID;
+            log.AccessTime = dto.AccessTime;
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAccessLog(int id)
+        {
+            var log = await _context.AccessLogs.FindAsync(id);
+            if (log == null) return NotFound();
+
+            _context.AccessLogs.Remove(log);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+
+
     }
 }

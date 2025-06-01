@@ -29,7 +29,8 @@ namespace MedicalID.Backend.Models
 
         public Region Region { get; set; }
         public string UserName { get;  set; }
-        public object PasswordHash { get;  set; }
+        public string PasswordHash { get; set; }
+
 
         public Patient()
         {

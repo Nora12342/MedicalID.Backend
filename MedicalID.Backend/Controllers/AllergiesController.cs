@@ -49,6 +49,31 @@ namespace MedicalID.Backend.Controllers
 
             return CreatedAtAction(nameof(GetAllergies), new { id = allergy.Allergen }, allergy);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAllergy(int id, AllergyDto dto)
+        {
+            var allergy = await _context.Allergies.FindAsync(id);
+            if (allergy == null) return NotFound();
+
+            allergy.Allergen = dto.Allergen;
+            allergy.Severity = dto.Severity;
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAllergy(int id)
+        {
+            var allergy = await _context.Allergies.FindAsync(id);
+            if (allergy == null) return NotFound();
+
+            _context.Allergies.Remove(allergy);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
     }
 
 }

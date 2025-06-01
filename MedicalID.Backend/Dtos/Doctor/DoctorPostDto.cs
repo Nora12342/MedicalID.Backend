@@ -8,5 +8,6 @@
         public string Specialization { get; set; }
         public string Email { get; set; }
         public int RegionID { get; set; }
+        public int Phone { get; set; }
     }
 }

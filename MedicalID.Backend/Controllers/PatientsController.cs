@@ -53,6 +53,34 @@ namespace MedicalID.Backend.Controllers
 
             return CreatedAtAction(nameof(GetPatients), new { id = patient.PatientID }, patient);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdatePatient(int id, PatientPostDto dto)
+        {
+            var patient = await _context.Patients.FindAsync(id);
+            if (patient == null) return NotFound();
+
+            patient.FName = dto.FName;
+            patient.LName = dto.LName;
+            patient.Gender = dto.Gender;
+            patient.MedicalID = dto.MedicalID;
+            // map other properties as needed
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeletePatient(int id)
+        {
+            var patient = await _context.Patients.FindAsync(id);
+            if (patient == null) return NotFound();
+
+            _context.Patients.Remove(patient);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
     }
 
 }

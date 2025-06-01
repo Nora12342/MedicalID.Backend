@@ -59,6 +59,34 @@ namespace MedicalID.Backend.Controllers
 
             return CreatedAtAction(nameof(GetRecordHistories), new { id = record.RecordID }, record);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateRecordHistory(int id, RecordHistoryPostDto dto)
+        {
+            var record = await _context.RecordHistories.FindAsync(id);
+            if (record == null) return NotFound();
+
+            record.PatientID = dto.PatientID;
+            record.DoctorID = dto.DoctorID;
+            record.AccessLogID = dto.AccessLogID;
+            record.Description = dto.Description;
+            record.UpdatedAt = dto.UpdatedAt;
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteRecordHistory(int id)
+        {
+            var record = await _context.RecordHistories.FindAsync(id);
+            if (record == null) return NotFound();
+
+            _context.RecordHistories.Remove(record);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
     }
 }
 

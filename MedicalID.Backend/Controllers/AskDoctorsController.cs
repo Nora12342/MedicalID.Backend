@@ -65,6 +65,33 @@ namespace MedicalID.Backend.Controllers
 
             return Ok(result);
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAskDoctor(int id, AskDoctorPostDto dto)
+        {
+            var askDoctor = await _context.AskDoctors.FindAsync(id);
+            if (askDoctor == null) return NotFound();
+
+            askDoctor.PatientID = dto.PatientID;
+            askDoctor.DoctorID = dto.DoctorID;
+            askDoctor.Question = dto.Question;
+            askDoctor.Answer = dto.Answer;
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAskDoctor(int id)
+        {
+            var askDoctor = await _context.AskDoctors.FindAsync(id);
+            if (askDoctor == null) return NotFound();
+
+            _context.AskDoctors.Remove(askDoctor);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
     }
 }
 
