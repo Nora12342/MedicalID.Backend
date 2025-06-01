@@ -9,11 +9,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace MedicalID.Backend.Migrations.AppDb
+namespace MedicalID.Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250503110516_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250525235422_InitClean")]
+    partial class InitClean
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,6 +25,89 @@ namespace MedicalID.Backend.Migrations.AppDb
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Allergy", b =>
+                {
+                    b.Property<int>("AllergyID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AllergyID"));
+
+                    b.Property<string>("Allergen")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Reaction")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("AllergyID");
+
+                    b.ToTable("Allergies");
+                });
+
+            modelBuilder.Entity("Hospital", b =>
+                {
+                    b.Property<int>("HospitalID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HospitalID"));
+
+                    b.Property<string>("ContactInformation")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("HospitalName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RegionID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("HospitalID");
+
+                    b.HasIndex("RegionID");
+
+                    b.ToTable("Hospitals");
+                });
+
+            modelBuilder.Entity("MedicalCondition", b =>
+                {
+                    b.Property<int>("ConditionID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ConditionID"));
+
+                    b.Property<string>("ConditionName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DiagnosedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("ConditionID");
+
+                    b.ToTable("MedicalConditions");
+                });
+
             modelBuilder.Entity("MedicalID.Backend.Models.AccessLog", b =>
                 {
                     b.Property<int>("LogID")
@@ -33,16 +116,23 @@ namespace MedicalID.Backend.Migrations.AppDb
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LogID"));
 
+                    b.Property<bool>("AccessGranted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("AccessStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("AccessTime")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("DoctorID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<string>("PatientID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<string>("Purpose")
                         .IsRequired()
@@ -57,70 +147,70 @@ namespace MedicalID.Backend.Migrations.AppDb
                     b.ToTable("AccessLogs");
                 });
 
-            modelBuilder.Entity("MedicalID.Backend.Models.Allergy", b =>
-                {
-                    b.Property<string>("PatientID")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Allergen")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Reaction")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Severity")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("PatientID", "Allergen");
-
-                    b.ToTable("Allergies");
-                });
-
             modelBuilder.Entity("MedicalID.Backend.Models.AskDoctor", b =>
                 {
-                    b.Property<string>("PatientID")
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<int>("MessageID")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MessageID"));
 
                     b.Property<string>("DoctorID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
-                    b.Property<string>("Question")
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MessageContent")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PatientID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<DateTime?>("RepliedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Response")
+                    b.Property<string>("ResponseContent")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("PatientID", "MessageID");
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("MessageID");
 
                     b.HasIndex("DoctorID");
+
+                    b.HasIndex("PatientID");
 
                     b.ToTable("AskDoctors");
                 });
 
             modelBuilder.Entity("MedicalID.Backend.Models.City", b =>
                 {
-                    b.Property<string>("CityID")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("CityID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Property<string>("Name")
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CityID"));
+
+                    b.Property<string>("CityName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("RegionID")
+                        .HasColumnType("int");
+
                     b.HasKey("CityID");
+
+                    b.HasIndex("RegionID");
 
                     b.ToTable("Cities");
                 });
@@ -128,7 +218,8 @@ namespace MedicalID.Backend.Migrations.AppDb
             modelBuilder.Entity("MedicalID.Backend.Models.Doctor", b =>
                 {
                     b.Property<string>("DoctorID")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(14)
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -142,11 +233,22 @@ namespace MedicalID.Backend.Migrations.AppDb
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("RegionID")
+                    b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RegionID")
+                        .HasColumnType("int");
 
                     b.Property<string>("Specialization")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -157,48 +259,38 @@ namespace MedicalID.Backend.Migrations.AppDb
                     b.ToTable("Doctors");
                 });
 
-            modelBuilder.Entity("MedicalID.Backend.Models.Hospital", b =>
-                {
-                    b.Property<string>("HospitalID")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RegionID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("HospitalID");
-
-                    b.HasIndex("RegionID");
-
-                    b.ToTable("Hospitals");
-                });
-
-            modelBuilder.Entity("MedicalID.Backend.Models.MedicalCondition", b =>
+            modelBuilder.Entity("MedicalID.Backend.Models.JoinModels.PatientAllergy", b =>
                 {
                     b.Property<string>("PatientID")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
-                    b.Property<int>("MedConditionID")
+                    b.Property<int>("AllergyID")
                         .HasColumnType("int");
 
-                    b.Property<string>("ConditionName")
+                    b.Property<string>("Note")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.HasKey("PatientID", "AllergyID");
 
-                    b.Property<DateTime?>("DiagnosedDate")
-                        .HasColumnType("datetime2");
+                    b.HasIndex("AllergyID");
 
-                    b.HasKey("PatientID", "MedConditionID");
+                    b.ToTable("PatientAllergies");
+                });
 
-                    b.ToTable("MedicalConditions");
+            modelBuilder.Entity("MedicalID.Backend.Models.JoinModels.PatientCondition", b =>
+                {
+                    b.Property<string>("PatientID")
+                        .HasColumnType("nvarchar(14)");
+
+                    b.Property<int>("ConditionID")
+                        .HasColumnType("int");
+
+                    b.HasKey("PatientID", "ConditionID");
+
+                    b.HasIndex("ConditionID");
+
+                    b.ToTable("PatientConditions");
                 });
 
             modelBuilder.Entity("MedicalID.Backend.Models.Medication", b =>
@@ -223,7 +315,7 @@ namespace MedicalID.Backend.Migrations.AppDb
 
                     b.Property<string>("PatientID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<DateTime?>("PrescribedDate")
                         .HasColumnType("datetime2");
@@ -238,7 +330,8 @@ namespace MedicalID.Backend.Migrations.AppDb
             modelBuilder.Entity("MedicalID.Backend.Models.Patient", b =>
                 {
                     b.Property<string>("PatientID")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(14)
+                        .HasColumnType("nvarchar(14)");
 
                     b.Property<string>("BloodType")
                         .IsRequired()
@@ -255,6 +348,10 @@ namespace MedicalID.Backend.Migrations.AppDb
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("LName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -266,8 +363,16 @@ namespace MedicalID.Backend.Migrations.AppDb
                     b.Property<bool>("OrganDonorStatus")
                         .HasColumnType("bit");
 
-                    b.Property<string>("RegionID")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RegionID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("PatientID");
 
@@ -278,53 +383,80 @@ namespace MedicalID.Backend.Migrations.AppDb
 
             modelBuilder.Entity("MedicalID.Backend.Models.RecordHistory", b =>
                 {
-                    b.Property<string>("PatientID")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("RecordID")
+                    b.Property<int>("RecordHistoryID")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<int?>("AccessLogID")
-                        .HasColumnType("int");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RecordHistoryID"));
 
-                    b.Property<string>("Description")
+                    b.Property<DateTime>("CreateTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DiagnosisNotes")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DoctorID")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(14)");
 
-                    b.Property<DateTime>("UpdatedAt")
+                    b.Property<int>("LogID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PatientID")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(14)");
+
+                    b.Property<string>("TreatmentPlan")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdateTime")
                         .HasColumnType("datetime2");
 
-                    b.HasKey("PatientID", "RecordID");
-
-                    b.HasIndex("AccessLogID");
+                    b.HasKey("RecordHistoryID");
 
                     b.HasIndex("DoctorID");
+
+                    b.HasIndex("LogID");
+
+                    b.HasIndex("PatientID");
 
                     b.ToTable("RecordHistories");
                 });
 
             modelBuilder.Entity("MedicalID.Backend.Models.Region", b =>
                 {
-                    b.Property<string>("RegionID")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("RegionID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.Property<string>("CityID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RegionID"));
+
+                    b.Property<int>("CityID")
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("Name");
 
                     b.HasKey("RegionID");
 
                     b.HasIndex("CityID");
 
                     b.ToTable("Regions");
+                });
+
+            modelBuilder.Entity("Hospital", b =>
+                {
+                    b.HasOne("MedicalID.Backend.Models.Region", "Region")
+                        .WithMany("Hospitals")
+                        .HasForeignKey("RegionID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Region");
                 });
 
             modelBuilder.Entity("MedicalID.Backend.Models.AccessLog", b =>
@@ -338,21 +470,10 @@ namespace MedicalID.Backend.Migrations.AppDb
                     b.HasOne("MedicalID.Backend.Models.Patient", "Patient")
                         .WithMany("AccessLogs")
                         .HasForeignKey("PatientID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Doctor");
-
-                    b.Navigation("Patient");
-                });
-
-            modelBuilder.Entity("MedicalID.Backend.Models.Allergy", b =>
-                {
-                    b.HasOne("MedicalID.Backend.Models.Patient", "Patient")
-                        .WithMany("Allergies")
-                        .HasForeignKey("PatientID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("Patient");
                 });
@@ -368,12 +489,19 @@ namespace MedicalID.Backend.Migrations.AppDb
                     b.HasOne("MedicalID.Backend.Models.Patient", "Patient")
                         .WithMany("AskDoctors")
                         .HasForeignKey("PatientID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Doctor");
 
                     b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("MedicalID.Backend.Models.City", b =>
+                {
+                    b.HasOne("MedicalID.Backend.Models.Region", null)
+                        .WithMany("Cities")
+                        .HasForeignKey("RegionID");
                 });
 
             modelBuilder.Entity("MedicalID.Backend.Models.Doctor", b =>
@@ -387,24 +515,40 @@ namespace MedicalID.Backend.Migrations.AppDb
                     b.Navigation("Region");
                 });
 
-            modelBuilder.Entity("MedicalID.Backend.Models.Hospital", b =>
+            modelBuilder.Entity("MedicalID.Backend.Models.JoinModels.PatientAllergy", b =>
                 {
-                    b.HasOne("MedicalID.Backend.Models.Region", "Region")
-                        .WithMany("Hospitals")
-                        .HasForeignKey("RegionID")
+                    b.HasOne("Allergy", "Allergy")
+                        .WithMany("PatientAllergies")
+                        .HasForeignKey("AllergyID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Region");
-                });
-
-            modelBuilder.Entity("MedicalID.Backend.Models.MedicalCondition", b =>
-                {
                     b.HasOne("MedicalID.Backend.Models.Patient", "Patient")
-                        .WithMany("MedicalConditions")
+                        .WithMany()
                         .HasForeignKey("PatientID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Allergy");
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("MedicalID.Backend.Models.JoinModels.PatientCondition", b =>
+                {
+                    b.HasOne("MedicalCondition", "Condition")
+                        .WithMany("PatientConditions")
+                        .HasForeignKey("ConditionID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MedicalID.Backend.Models.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Condition");
 
                     b.Navigation("Patient");
                 });
@@ -412,7 +556,7 @@ namespace MedicalID.Backend.Migrations.AppDb
             modelBuilder.Entity("MedicalID.Backend.Models.Medication", b =>
                 {
                     b.HasOne("MedicalID.Backend.Models.Patient", "Patient")
-                        .WithMany("Medications")
+                        .WithMany()
                         .HasForeignKey("PatientID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -422,27 +566,33 @@ namespace MedicalID.Backend.Migrations.AppDb
 
             modelBuilder.Entity("MedicalID.Backend.Models.Patient", b =>
                 {
-                    b.HasOne("MedicalID.Backend.Models.Region", null)
+                    b.HasOne("MedicalID.Backend.Models.Region", "Region")
                         .WithMany("Patients")
-                        .HasForeignKey("RegionID");
+                        .HasForeignKey("RegionID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Region");
                 });
 
             modelBuilder.Entity("MedicalID.Backend.Models.RecordHistory", b =>
                 {
-                    b.HasOne("MedicalID.Backend.Models.AccessLog", "AccessLog")
-                        .WithMany()
-                        .HasForeignKey("AccessLogID");
-
                     b.HasOne("MedicalID.Backend.Models.Doctor", "Doctor")
                         .WithMany("RecordHistories")
                         .HasForeignKey("DoctorID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedicalID.Backend.Models.AccessLog", "AccessLog")
+                        .WithMany()
+                        .HasForeignKey("LogID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MedicalID.Backend.Models.Patient", "Patient")
                         .WithMany("RecordHistories")
                         .HasForeignKey("PatientID")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("AccessLog");
@@ -463,6 +613,16 @@ namespace MedicalID.Backend.Migrations.AppDb
                     b.Navigation("City");
                 });
 
+            modelBuilder.Entity("Allergy", b =>
+                {
+                    b.Navigation("PatientAllergies");
+                });
+
+            modelBuilder.Entity("MedicalCondition", b =>
+                {
+                    b.Navigation("PatientConditions");
+                });
+
             modelBuilder.Entity("MedicalID.Backend.Models.City", b =>
                 {
                     b.Navigation("Regions");
@@ -481,19 +641,15 @@ namespace MedicalID.Backend.Migrations.AppDb
                 {
                     b.Navigation("AccessLogs");
 
-                    b.Navigation("Allergies");
-
                     b.Navigation("AskDoctors");
-
-                    b.Navigation("MedicalConditions");
-
-                    b.Navigation("Medications");
 
                     b.Navigation("RecordHistories");
                 });
 
             modelBuilder.Entity("MedicalID.Backend.Models.Region", b =>
                 {
+                    b.Navigation("Cities");
+
                     b.Navigation("Doctors");
 
                     b.Navigation("Hospitals");

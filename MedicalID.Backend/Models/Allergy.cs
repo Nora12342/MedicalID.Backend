@@ -1,12 +1,17 @@
-﻿namespace MedicalID.Backend.Models
-{
-    public class Allergy
-    {
-        public string PatientID { get; set; }
-        public Patient Patient { get; set; }
+﻿using System.ComponentModel.DataAnnotations;
+using MedicalID.Backend.Models;
+using MedicalID.Backend.Models.JoinModels;
 
-        public string Allergen { get; set; }
-        public string Reaction { get; set; }
-        public string Severity { get; set; }
-    }
+public class Allergy
+{
+    [Key]
+    public int AllergyID { get; set; } // ✅ Required
+
+    public string Allergen { get; set; }
+    public string Severity { get; set; }
+    public string Reaction { get; set; }
+
+    public ICollection<PatientAllergy> PatientAllergies { get; set; }
+
 }
+

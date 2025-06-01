@@ -2,10 +2,12 @@
 {
     public class RecordHistoryPostDto
     {
-        public string PatientID { get; set; }
+        public int PatientID { get; set; }
         public string DoctorID { get; set; }
-        public int AccessLogID { get; set; }
-        public string Description { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        public int LogID { get; set; }
+        public string DiagnosisNotes { get; set; }
+        public string TreatmentPlan { get; set; }
+        public string? Surgery { get; set; }
+        public string? SurgeryNote { get; set; }
     }
 }

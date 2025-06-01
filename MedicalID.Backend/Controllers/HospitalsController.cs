@@ -1,52 +1,47 @@
 ﻿using MedicalID.Backend.Data;
 using MedicalID.Backend.Models;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedicalID.Backend.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
+    [ApiController]
     public class HospitalsController : ControllerBase
     {
-        private readonly MedicalIDContext _context;
+        private readonly AppDbContext _context;
 
-        public HospitalsController(MedicalIDContext context)
+        public HospitalsController(AppDbContext context)
         {
             _context = context;
         }
 
+        [Authorize(Roles = "Doctor,Patient")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Hospital>>> GetHospitals()
+        public async Task<IActionResult> GetHospitals()
         {
-            return await _context.Hospitals.ToListAsync();
+            return Ok(await _context.Hospitals.ToListAsync());
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateHospital(int id, Hospital dto)
+        [Authorize(Roles = "Doctor")]
+        [HttpPost]
+        public async Task<IActionResult> AddHospital(Hospital hospital)
         {
-            var hospital = await _context.Hospitals.FindAsync(id);
-            if (hospital == null) return NotFound();
-
-            hospital.Name = dto.Name;
-            hospital.Region = dto.Region;
-            hospital.RegionID = dto.RegionID;
-
+            _context.Hospitals.Add(hospital);
             await _context.SaveChangesAsync();
-            return NoContent();
+            return Ok("Hospital added.");
         }
 
+        [Authorize(Roles = "Doctor")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteHospital(int id)
         {
             var hospital = await _context.Hospitals.FindAsync(id);
             if (hospital == null) return NotFound();
-
             _context.Hospitals.Remove(hospital);
             await _context.SaveChangesAsync();
-            return NoContent();
+            return Ok("Hospital deleted.");
         }
-
     }
 }

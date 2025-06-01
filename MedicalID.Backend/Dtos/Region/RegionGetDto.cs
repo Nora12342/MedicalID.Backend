@@ -1,8 +1,8 @@
-﻿namespace MedicalID.Backend.Dtos
+﻿namespace MedicalID.Backend.Dtos.Region
 {
     public class RegionGetDto
     {
-        public string RegionID { get; set; }
+        public int RegionID { get; set; }
         public string Name { get; set; }
         public string CityName { get; set; }
 

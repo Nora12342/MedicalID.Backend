@@ -1,11 +1,12 @@
 ﻿namespace MedicalID.Backend.Dtos.RecordHistory
 {
-    public class RecordHistoryDto
+    public class RecordHistoryDTO
     {
-        public int RecordID { get; set; }
-        public string Description { get; set; }
-        public DateTime UpdatedAt { get; set; }
-        public string DoctorName { get; set; }
-        public string PatientName { get; set; }
+        public int PatientID { get; set; }
+        public string DoctorID { get; set; }
+        public int LogID { get; set; }
+        public string DiagnosisNotes { get; set; }
+        public string TreatmentPlan { get; set; }
     }
+
 }

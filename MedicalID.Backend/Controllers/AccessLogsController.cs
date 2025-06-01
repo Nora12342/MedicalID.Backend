@@ -1,86 +1,109 @@
 ﻿using MedicalID.Backend.Data;
 using MedicalID.Backend.Dtos.Accesslog;
 using MedicalID.Backend.Models;
-using Microsoft.AspNetCore.Authorization; // ✅ Add this
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace MedicalID.Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AccessLogController : ControllerBase
+    [Authorize(Roles = "Doctor")]
+    public class AccessLogsController : ControllerBase
     {
-        private readonly MedicalIDContext _context;
+        private readonly AppDbContext _context;
 
-        public AccessLogController(MedicalIDContext context)
+        public AccessLogsController(AppDbContext context)
         {
             _context = context;
         }
 
+        // ✅ Get All Access Logs (for admin/debugging or testing)
+        [Authorize(Roles = "Doctor,Patient")]
         [HttpGet]
-        [Authorize(Roles = "Doctor,Patient")] // ✅ Both roles can see access logs
-        public async Task<ActionResult<IEnumerable<AccessLogDto>>> GetAccessLogs()
+        public async Task<IActionResult> GetAllAccessLogs()
         {
             var logs = await _context.AccessLogs
-                .Include(a => a.Doctor)
-                .Include(a => a.Patient)
-                .Select(a => new AccessLogDto
+                .Select(log => new AccessLogDto
                 {
-                    LogID = a.LogID,
-                    AccessTime = a.AccessTime,
-                    Purpose = a.Purpose,
-                    DoctorName = a.Doctor.FName + " " + a.Doctor.LName,
-                    PatientName = a.Patient.FName + " " + a.Patient.LName
-                }).ToListAsync();
+                    LogID = log.LogID,
+                    DoctorID = log.DoctorID,
+                    PatientID = log.PatientID,
+                    AccessTime = log.AccessTime,
+                    Purpose = log.Purpose,
+                    AccessStatus = log.AccessStatus,
+                    AccessGranted = log.AccessGranted
+                })
+                .ToListAsync();
 
             return Ok(logs);
         }
 
+        // ✅ Doctor: Request access to patient
+        [Authorize(Roles = "Doctor")]
         [HttpPost]
-        [Authorize(Roles = "Doctor")] // ✅ Only doctors log access
-        public async Task<ActionResult<AccessLog>> PostAccessLog(AccessLogPostDto dto)
+        public async Task<IActionResult> RequestAccess([FromBody] AccessLogPostDto dto)
         {
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (doctorId == null || dto.PatientID <= 0)
+                return BadRequest("Invalid doctor or patient ID.");
+
             var log = new AccessLog
             {
-                AccessTime = dto.AccessTime,
+                DoctorID = doctorId,
+                PatientID = dto.PatientID, // ✅ dto.PatientID is now int
+                AccessTime = DateTime.UtcNow,
                 Purpose = dto.Purpose,
-                DoctorID = dto.DoctorID,
-                PatientID = dto.PatientID
+                AccessStatus = "Pending",
+                AccessGranted = false
             };
 
             _context.AccessLogs.Add(log);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetAccessLogs), new { id = log.LogID }, log);
+            return Ok("Access request sent.");
         }
 
+         //✅ Patient: Approve or reject access
+        [Authorize(Roles = "Patient")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateAccessLog(int id, AccessLogPostDto dto)
+        public async Task<IActionResult> UpdateAccessLog(int id, [FromBody] AccessLogUpdateDTO dto)
         {
-            var log = await _context.AccessLogs.FindAsync(id);
-            if (log == null) return NotFound();
+            //var patientIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            //if (!int.TryParse(patientIdStr, out int patientId))
+            //    return Unauthorized("Invalid patient ID in token.");
 
-            log.PatientID = dto.PatientID;
-            log.DoctorID = dto.DoctorID;
-            log.AccessTime = dto.AccessTime;
+            //var patientId = _context.Patients.Find(id);
+            //if ( patientId is  null )
+            //{
+            //    return BadRequest("this id is null");
+            //}
 
-            await _context.SaveChangesAsync();
-            return NoContent();
+            var patientId = dto.PatientId;
+
+            var log = await _context.AccessLogs.FirstOrDefaultAsync(
+                a => a.LogID == id && a.PatientID == patientId); // ✅ int == int
+
+            try
+            {
+                log.AccessGranted = dto.AccessGranted;
+                log.AccessStatus = dto.AccessStatus ?? (dto.AccessGranted ? "Approved" : "Rejected");
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.InnerException);
+            }
+
+            //if (log == null)
+            //    return NotFound("Access request not found or does not belong to this patient.");
+
+
+            return Ok("Access log updated successfully.");
         }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAccessLog(int id)
-        {
-            var log = await _context.AccessLogs.FindAsync(id);
-            if (log == null) return NotFound();
-
-            _context.AccessLogs.Remove(log);
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-
-
-
     }
+
 }

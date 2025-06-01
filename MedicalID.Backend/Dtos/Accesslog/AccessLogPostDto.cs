@@ -3,8 +3,10 @@
     public class AccessLogPostDto
     {
         public string DoctorID { get; set; }
-        public string PatientID { get; set; }
+        public int PatientID { get; set; }
         public DateTime AccessTime { get; set; }
         public string Purpose { get; set; }
+        public string AccessStatus { get; set; }
+        public bool AccessGranted { get; set; }
     }
 }

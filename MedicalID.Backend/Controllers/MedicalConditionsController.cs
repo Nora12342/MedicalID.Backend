@@ -1,9 +1,10 @@
 ﻿using MedicalID.Backend.Data;
-using MedicalID.Backend.Dtos;
-using MedicalID.Backend.Models;
+using MedicalID.Backend.Models.JoinModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using MedicalID.Backend.Dtos.MedicalCondition;
 
 namespace MedicalID.Backend.Controllers
 {
@@ -11,70 +12,68 @@ namespace MedicalID.Backend.Controllers
     [ApiController]
     public class MedicalConditionsController : ControllerBase
     {
-        private readonly MedicalIDContext _context;
+        private readonly AppDbContext _context;
 
-        public MedicalConditionsController(MedicalIDContext context)
+        public MedicalConditionsController(AppDbContext context)
         {
             _context = context;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<MedicalConditionDto>>> GetMedicalConditions()
+        // 🧑‍🦰 Patient: View their conditions
+        [Authorize(Roles = "Patient")]
+        [HttpGet("my")]
+        public async Task<IActionResult> GetMyConditions()
         {
-            var conditions = await _context.MedicalConditions
-                .Select(c => new MedicalConditionDto
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdStr, out int patientId))
+                return Unauthorized("Invalid patient ID in token.");
+
+            var conditions = await _context.PatientConditions
+                .Where(pc => pc.PatientID == patientId)
+                .Include(pc => pc.Condition)
+                .Select(pc => new MedicalConditionDto
                 {
-                    MedConditionID = c.MedConditionID,
-                    ConditionName = c.ConditionName,
-                    Description = c.Description,
-                    DiagnosedDate = (DateTime)c.DiagnosedDate,
-                    PatientID = c.PatientID
-                }).ToListAsync();
+                    ConditionID = pc.ConditionID,
+                    ConditionName = pc.Condition.ConditionName,
+                    Description = pc.Condition.Description,
+                    DiagnosedDate = pc.Condition.DiagnosedDate
+                    // Removed Note ✅
+                })
+                .ToListAsync();
 
             return Ok(conditions);
         }
 
+        // 👨‍⚕️ Doctor: Assign condition to patient
+        [Authorize(Roles = "Doctor")]
         [HttpPost]
-        public async Task<ActionResult<MedicalCondition>> PostMedicalCondition(MedicalConditionDto dto)
+        public async Task<IActionResult> AddCondition([FromBody] PatientConditionPostDto dto)
         {
-            var condition = new MedicalCondition
+            var newEntry = new PatientCondition
             {
-                ConditionName = dto.ConditionName,
-                Description = dto.Description,
-                DiagnosedDate = dto.DiagnosedDate,
-                PatientID = dto.PatientID
+                PatientID = dto.PatientID,
+                ConditionID = dto.ConditionID
+                // Removed Note ✅
             };
 
-            _context.MedicalConditions.Add(condition);
+            _context.PatientConditions.Add(newEntry);
             await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetMedicalConditions), new { id = condition.MedConditionID }, condition);
+            return Ok("Condition added successfully.");
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMedicalCondition(int id, MedicalConditionDto dto)
+        // 👨‍⚕️ Doctor: Remove assigned condition
+        [Authorize(Roles = "Doctor")]
+        [HttpDelete("{patientId:int}/{conditionId}")]
+        public async Task<IActionResult> DeleteCondition(int patientId, int conditionId)
         {
-            var condition = await _context.MedicalConditions.FindAsync(id);
-            if (condition == null) return NotFound();
+            var entry = await _context.PatientConditions.FindAsync(patientId, conditionId);
+            if (entry == null) return NotFound();
 
-            condition.ConditionName = dto.ConditionName;
-            condition.Description = dto.Description;
-
+            _context.PatientConditions.Remove(entry);
             await _context.SaveChangesAsync();
-            return NoContent();
+
+            return Ok("Condition removed successfully.");
         }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteMedicalCondition(int id)
-        {
-            var condition = await _context.MedicalConditions.FindAsync(id);
-            if (condition == null) return NotFound();
-
-            _context.MedicalConditions.Remove(condition);
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-
     }
 
 }

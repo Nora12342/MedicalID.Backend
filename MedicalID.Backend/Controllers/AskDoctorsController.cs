@@ -1,14 +1,15 @@
 ﻿using MedicalID.Backend.Data;
 using MedicalID.Backend.Dtos.AskDoctor;
 using MedicalID.Backend.Models;
-using Microsoft.AspNetCore.Authorization; // ✅ Add this
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace MedicalID.Backend.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
+    [ApiController]
     public class AskDoctorController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -18,80 +19,140 @@ namespace MedicalID.Backend.Controllers
             _context = context;
         }
 
-        [HttpPost]
-        [Authorize(Roles = "Patient")] // ✅ Only patients can ask
-        public async Task<IActionResult> CreateAskDoctor([FromBody] AskDoctorPostDto dto)
+        [Authorize(Roles = "Patient")]
+        [HttpGet("patient")]
+        public async Task<IActionResult> GetDoctorMessages()
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            var askDoctor = new AskDoctor
+            var messages = await _context.AskDoctors
+                .Where(m => m.DoctorID == doctorId)
+                .Include(m => m.Patient)
+                .Include(m => m.Doctor)
+                .Select(m => new AskDoctorDto
+                {
+                    MessageID = m.MessageID,
+                    Question = m.MessageContent,
+                    Response = m.ResponseContent,
+                    SentAt = m.SentAt,
+                    RepliedAt = m.RepliedAt,
+                    DoctorName = $"{m.Doctor.FName} {m.Doctor.LName}",
+                    PatientName = $"{m.Patient.FName} {m.Patient.LName}",
+                    UpiRef = m.UpiRef
+                })
+                .ToListAsync();
+
+            return Ok(messages);
+        }
+
+        [Authorize(Roles = "Doctor")]
+        [HttpGet("doctor")]
+        public async Task<IActionResult> GetMyQuestions()
+        {
+            //var patientIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            //if (!int.TryParse(patientIdStr, out int patientId))
+            //    return Unauthorized("Invalid patient ID in token.");
+
+            var messages = await _context.AskDoctors
+                //.Where(m => m.PatientID == patientId)
+                .Include(m => m.Doctor)
+                .Include(m => m.Patient)
+                .Select(m => new AskDoctorDto
+                {
+                    MessageID = m.MessageID,
+                    Question = m.MessageContent,
+                    Response = m.ResponseContent,
+                    SentAt = m.SentAt,
+                    RepliedAt = DateTime.Now,
+                    DoctorName = $"{m.Doctor.FName} {m.Doctor.LName}",
+                    PatientName = $"{m.Patient.FName} {m.Patient.LName}",
+                    UpiRef = m.UpiRef,
+                    Subject = m.Subject,
+                    
+                    
+                  
+                })
+                .ToListAsync();
+
+            return Ok(messages);
+        }
+
+        [Authorize(Roles = "Patient")]
+        [HttpPost]
+        public async Task<IActionResult> AskDoctor([FromBody] AskDoctorPostDto dto)
+        {
+            //var patientIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value??"1";
+            //if (!int.TryParse(patientIdStr, out int patientId))
+            //    return Unauthorized("Invalid patient ID in token.");
+
+            //var PatientId = _context.Find(dto.PatientID);
+
+            var patientId = 1;
+
+            if (patientId != dto.PatientID)
+                return Forbid();
+
+            var doctorExists = await _context.Doctors.AnyAsync(d => d.DoctorID == dto.DoctorID);
+            if (!doctorExists) return BadRequest("Doctor not found.");
+
+            if (!dto.IsPaid || dto.AmountPaid <= 0)
+                return BadRequest("Payment is required before submitting a question.");
+
+            var message = new AskDoctor
             {
-                Question = dto.Question,
                 DoctorID = dto.DoctorID,
                 PatientID = dto.PatientID,
+                MessageContent = dto.Question,
                 SentAt = DateTime.UtcNow,
-                Response = null,
-                RepliedAt = null
+                IsRead = false,
+                IsPaid = dto.IsPaid,
+                AmountPaid = dto.AmountPaid,
+                UpiRef = dto.UpiRef,
+                Subject = dto.Subject
             };
 
-            _context.AskDoctors.Add(askDoctor);
+            _context.AskDoctors.Add(message);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetAskDoctorById), new { id = askDoctor.MessageID }, askDoctor);
+            return Ok("Question sent to doctor.");
         }
 
-        [HttpGet("{id}")]
-        [Authorize(Roles = "Doctor,Patient")] // ✅ Both can read the message
-        public async Task<ActionResult<AskDoctorDto>> GetAskDoctorById(int id)
+        [Authorize(Roles = "Doctor")]
+        [HttpPut("respond/{id}")]
+        public async Task<IActionResult> RespondToMessage(int id, [FromBody] AskDoctorResponseDto dto)
         {
-            var ask = await _context.AskDoctors
-                .Include(a => a.Doctor)
-                .Include(a => a.Patient)
-                .FirstOrDefaultAsync(a => a.MessageID == id);
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var message = await _context.AskDoctors.FindAsync(id);
 
-            if (ask == null) return NotFound();
+            if (message == null) return NotFound();
+            if (message.DoctorID != doctorId) return Forbid();
 
-            var result = new AskDoctorDto
-            {
-                MessageID = ask.MessageID,
-                Question = ask.Question,
-                Response = ask.Response,
-                SentAt = ask.SentAt,
-                RepliedAt = ask.RepliedAt,
-                DoctorName = ask.Doctor?.FName + " " + ask.Doctor?.LName,
-                PatientName = ask.Patient?.FName + " " + ask.Patient?.LName
-            };
+            message.ResponseContent = dto.ResponseContent;
+            message.IsRead = true;
+            message.RepliedAt = DateTime.UtcNow;
 
-            return Ok(result);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateAskDoctor(int id, AskDoctorPostDto dto)
-        {
-            var askDoctor = await _context.AskDoctors.FindAsync(id);
-            if (askDoctor == null) return NotFound();
-
-            askDoctor.PatientID = dto.PatientID;
-            askDoctor.DoctorID = dto.DoctorID;
-            askDoctor.Question = dto.Question;
-            askDoctor.Answer = dto.Answer;
-
+            _context.Entry(message).State = EntityState.Modified;
             await _context.SaveChangesAsync();
-            return NoContent();
+
+            return Ok("Response submitted.");
         }
 
+        [Authorize(Roles = "Doctor")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAskDoctor(int id)
+        public async Task<IActionResult> DeleteMessage(int id)
         {
-            var askDoctor = await _context.AskDoctors.FindAsync(id);
-            if (askDoctor == null) return NotFound();
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var message = await _context.AskDoctors.FindAsync(id);
 
-            _context.AskDoctors.Remove(askDoctor);
+            if (message == null) return NotFound();
+            if (message.DoctorID != doctorId) return Forbid();
+
+            _context.AskDoctors.Remove(message);
             await _context.SaveChangesAsync();
-            return NoContent();
-        }
 
+            return Ok("Message deleted.");
+        }
     }
 }
+
 

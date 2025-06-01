@@ -1,19 +1,47 @@
-﻿namespace MedicalID.Backend.Models
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using MedicalID.Backend.Models;
+
+namespace MedicalID.Backend.Models
 {
     public class RecordHistory
     {
-        public int RecordID { get; set; }
+        [Key]
+        public int RecordHistoryID { get; set; }
 
-        public string PatientID { get; set; }
-        public Patient Patient { get; set; }
+        [Required]
+        public int PatientID { get; set; } // ✅ Changed from string to int
 
-        public string DoctorID { get; set; }
-        public Doctor Doctor { get; set; }
+        [Required]
+        [StringLength(14)]
+        public string DoctorID { get; set; } = string.Empty; // ✅ still string
 
-        public int? AccessLogID { get; set; }
-        public AccessLog AccessLog { get; set; }
+        [Required]
+        public int LogID { get; set; }
 
-        public string Description { get; set; }
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        [Required]
+        public string DiagnosisNotes { get; set; } = string.Empty;
+
+        [Required]
+        public string TreatmentPlan { get; set; } = string.Empty;
+
+        public DateTime CreateTime { get; set; }
+        public DateTime? UpdateTime { get; set; }
+
+        public string? Surgery { get; set; }
+        public string? SurgeryNote { get; set; }
+
+        // Navigation properties
+        public Patient? Patient { get; set; } // ✅ correct
+        public Doctor? Doctor { get; set; }
+
+        [ForeignKey(nameof(LogID))]
+        public AccessLog? AccessLog { get; set; }
+
+        public List<RecordHistoryFile>? Files { get; set; }
     }
+
+
+
 }
+

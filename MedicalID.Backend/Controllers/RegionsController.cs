@@ -1,5 +1,5 @@
 ﻿using MedicalID.Backend.Data;
-using MedicalID.Backend.Dtos;
+using MedicalID.Backend.Dtos.Region;
 using MedicalID.Backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,51 +11,50 @@ namespace MedicalID.Backend.Controllers
     [ApiController]
     public class RegionsController : ControllerBase
     {
-        private readonly MedicalIDContext _context;
+        private readonly AppDbContext _context;
 
-        public RegionsController(MedicalIDContext context)
+        public RegionsController(AppDbContext context)
         {
             _context = context;
         }
 
+        [Authorize(Roles = "Doctor,Patient")]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<RegionGetDto>>> GetRegions()
+        public async Task<IActionResult> GetRegions()
         {
-            var regions = await _context.Regions
-                .Select(r => new RegionGetDto
-                {
-                    RegionID = r.RegionID,
-                    Name = r.Name
-                }).ToListAsync();
-
-            return Ok(regions);
+            return Ok(await _context.Regions.Include(r => r.Cities).ToListAsync());
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateRegion(int id, RegionGetDto dto)
+        [Authorize(Roles = "Doctor")]
+        [HttpPost]
+        public async Task<IActionResult> CreateRegion([FromBody] RegionPostDto dto)
         {
-            var region = await _context.Regions.FindAsync(id);
-            if (region == null) return NotFound();
+            var cityExists = await _context.City.AnyAsync(c => c.CityID == dto.CityID);
+            if (!cityExists)
+                return BadRequest("Invalid city ID.");
 
-            region.Name = dto.Name;
-            // map other properties if exist
+            var region = new Region
+            {
+                Name = dto.Name,
+                CityID = dto.CityID
+            };
 
+            _context.Regions.Add(region);
             await _context.SaveChangesAsync();
-            return NoContent();
+
+            return Ok("Region created successfully.");
         }
 
+
+        [Authorize(Roles = "Doctor")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRegion(int id)
+        public async Task<IActionResult> DeleteRegion(string id)
         {
             var region = await _context.Regions.FindAsync(id);
             if (region == null) return NotFound();
-
             _context.Regions.Remove(region);
             await _context.SaveChangesAsync();
-            return NoContent();
+            return Ok("Region deleted.");
         }
-
     }
-
-
 }

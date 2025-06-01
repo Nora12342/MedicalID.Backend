@@ -12,11 +12,18 @@ public static class JwtHelper
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId),
             new Claim(JwtRegisteredClaimNames.UniqueName, username),
-            new Claim(ClaimTypes.Role, role), // Here we add the role claim
+            new Claim(ClaimTypes.Role, role),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]));
+        var keyBytes = Encoding.UTF8.GetBytes(config["Jwt:Key"]);
+
+        if (keyBytes.Length < 32)
+        {
+            throw new InvalidOperationException("JWT key must be at least 256 bits (32 bytes). Update your appsettings.json.");
+        }
+
+        var key = new SymmetricSecurityKey(keyBytes);
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(

@@ -6,17 +6,17 @@ namespace MedicalID.Backend.Controllers
     [ApiController]
     public class ErrorController : ControllerBase
     {
-        [HttpGet]
         [Route("/error")]
+        [HttpGet] // Required by Swagger to know what method this is
         public IActionResult HandleError()
         {
             var context = HttpContext.Features.Get<IExceptionHandlerFeature>();
             var exception = context?.Error;
 
+            // Optional: return the error message for development
             return Problem(
                 detail: exception?.Message,
-                statusCode: 500,
-                title: "An unexpected error occurred"
+                title: "An unexpected error occurred."
             );
         }
     }

@@ -1,9 +1,11 @@
 ﻿using MedicalID.Backend.Data;
 using MedicalID.Backend.Dtos;
 using MedicalID.Backend.Models;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace MedicalID.Backend.Controllers
 {
@@ -11,33 +13,28 @@ namespace MedicalID.Backend.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly MedicalIDContext _context;
+        private readonly AppDbContext _context;
         private readonly IConfiguration _config;
+        private readonly IPasswordHasher<Doctor> _doctorHasher;
+        private readonly IPasswordHasher<Patient> _patientHasher;
 
-        public AuthController(MedicalIDContext context, IConfiguration config)
+        public AuthController(AppDbContext context, IConfiguration config)
         {
             _context = context;
             _config = config;
+            _doctorHasher = new PasswordHasher<Doctor>();
+            _patientHasher = new PasswordHasher<Patient>();
         }
 
         [HttpPost("login")]
         public async Task<ActionResult> Login(LoginDto dto)
         {
-            // Check in Doctors
-            var doctor = await _context.Doctors
-                .FirstOrDefaultAsync(d => d.UserName == dto.UserName);
-
+            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserName == dto.UserName);
             if (doctor != null)
             {
-                if (BCrypt.Net.BCrypt.Verify(dto.Password, (string)doctor.PasswordHash))
+                if (BCrypt.Net.BCrypt.Verify(dto.Password, doctor.PasswordHash))
                 {
-                    var token = JwtHelper.GenerateToken(
-                        doctor.DoctorID,
-                        doctor.UserName,
-                        "Doctor",
-                        _config
-                    );
-
+                    var token = JwtHelper.GenerateToken(doctor.DoctorID, doctor.UserName, "Doctor", _config);
                     return Ok(new
                     {
                         token,
@@ -51,25 +48,14 @@ namespace MedicalID.Backend.Controllers
                     });
                 }
                 return Unauthorized("Invalid password.");
-
-
             }
 
-            // Check in Patients
-            var patient = await _context.Patients
-                .FirstOrDefaultAsync(p => p.UserName == dto.UserName);
-
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserName == dto.UserName);
             if (patient != null)
             {
-                if (BCrypt.Net.BCrypt.Verify(dto.Password, (string)patient.PasswordHash))
+                if (BCrypt.Net.BCrypt.Verify(dto.Password, patient.PasswordHash))
                 {
-                    var token = JwtHelper.GenerateToken(
-                        patient.PatientID,
-                        patient.UserName,
-                        "Patient",
-                        _config
-                    );
-
+                    var token = JwtHelper.GenerateToken(patient.PatientID, patient.UserName, "Patient", _config);
                     return Ok(new
                     {
                         token,
@@ -94,15 +80,24 @@ namespace MedicalID.Backend.Controllers
             if (await _context.Doctors.AnyAsync(d => d.UserName == dto.UserName))
                 return BadRequest("Username already exists for a doctor.");
 
+            var specialization = await _context.Specializations
+                .FirstOrDefaultAsync(s => s.Name == dto.Specialization);
+
+            if (specialization == null)
+                return BadRequest("Specialization not found.");
+
             var doctor = new Doctor
             {
                 DoctorID = dto.DoctorID,
                 FName = dto.FName,
                 LName = dto.LName,
-                Specialization = dto.Specialization,
+                SpecializationID = specialization.SpecializationID,
                 UserName = dto.UserName,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                RegionID = dto.RegionID
+                RegionID = dto.RegionID,
+                Email = dto.Email,
+                Phone = dto.Phone,
+                ReferenceID = dto.ReferenceID
             };
 
             _context.Doctors.Add(doctor);
@@ -110,6 +105,7 @@ namespace MedicalID.Backend.Controllers
 
             return Ok("Doctor registered successfully.");
         }
+
 
         [HttpPost("register/patient")]
         public async Task<ActionResult> RegisterPatient(PatientRegisterDto dto)
@@ -125,7 +121,9 @@ namespace MedicalID.Backend.Controllers
                 LName = dto.LName,
                 UserName = dto.UserName,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                Gender = dto.Gender,
                 DateOfBirth = dto.DateOfBirth,
+                Email = dto.Email,
                 BloodType = dto.BloodType,
                 EmergencyContact = dto.EmergencyContact,
                 OrganDonorStatus = dto.OrganDonorStatus,
@@ -138,15 +136,66 @@ namespace MedicalID.Backend.Controllers
             return Ok("Patient registered successfully.");
         }
 
+
+        [HttpPost("Doctor/ForgotPassword")]
+        public IActionResult DoctorForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var doctor = _context.Doctors.FirstOrDefault(d => d.Email == dto.Email);
+            if (doctor == null) return NotFound("Doctor with this email does not exist.");
+
+            doctor.ResetToken = Guid.NewGuid().ToString();
+            doctor.ResetTokenExpiry = DateTime.UtcNow.AddMinutes(15);
+            _context.SaveChanges();
+
+            return Ok(new { token = doctor.ResetToken });
+        }
+
+        [HttpPost("Doctor/ResetPassword")]
+        public IActionResult DoctorResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var doctor = _context.Doctors.FirstOrDefault(d => d.ResetToken == dto.Token && d.ResetTokenExpiry > DateTime.UtcNow);
+            if (doctor == null) return BadRequest("Invalid or expired token.");
+
+            doctor.PasswordHash = _doctorHasher.HashPassword(doctor, dto.NewPassword);
+            doctor.ResetToken = null;
+            doctor.ResetTokenExpiry = null;
+            _context.SaveChanges();
+
+            return Ok("Password reset successful.");
+        }
+
+
+        [HttpPost("Patient/ForgotPassword")]
+        public IActionResult PatientForgotPassword([FromBody] ForgotPasswordDto dto)
+        {
+            var patient = _context.Patients.FirstOrDefault(p => p.Email == dto.Email);
+            if (patient == null) return NotFound("Patient with this email does not exist.");
+
+            patient.ResetToken = Guid.NewGuid().ToString();
+            patient.ResetTokenExpiry = DateTime.UtcNow.AddMinutes(15);
+            _context.SaveChanges();
+
+            
+            return Ok(new { token = patient.ResetToken });
+        }
+
+        [HttpPost("Patient/ResetPassword")]
+        public IActionResult PatientResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            var patient = _context.Patients.FirstOrDefault(p => p.ResetToken == dto.Token && p.ResetTokenExpiry > DateTime.UtcNow);
+            if (patient == null) return BadRequest("Invalid or expired token.");
+
+            patient.PasswordHash = _patientHasher.HashPassword(patient, dto.NewPassword);
+            patient.ResetToken = null;
+            patient.ResetTokenExpiry = null;
+            _context.SaveChanges();
+
+            return Ok("Password reset successful.");
+        }
+
         [HttpPost("logout")]
         public IActionResult Logout()
         {
-            // If you store refresh tokens server-side, revoke them here (optional)
-            // Example:
-            // var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            // _authService.RevokeRefreshToken(userId);
-
-            // For stateless JWT, just return success and client deletes token
             return Ok(new { message = "Logout successful" });
         }
     }

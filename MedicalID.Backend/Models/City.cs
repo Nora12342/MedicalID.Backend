@@ -1,11 +1,14 @@
-﻿namespace MedicalID.Backend.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace MedicalID.Backend.Models
 {
     public class City
     {
-        public string CityID { get; set; }
-        public string Name { get; set; }
-
+        [Key]
+        public int CityID { get; set; }
+        public string CityName { get; set; }
         public ICollection<Region> Regions { get; set; }
-
+        
     }
 }
+

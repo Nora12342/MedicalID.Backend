@@ -4,6 +4,7 @@ using MedicalID.Backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace MedicalID.Backend.Controllers
 {
@@ -11,76 +12,90 @@ namespace MedicalID.Backend.Controllers
     [ApiController]
     public class PatientsController : ControllerBase
     {
-        private readonly MedicalIDContext _context;
+        private readonly AppDbContext _context;
 
-        public PatientsController(MedicalIDContext context)
+        public PatientsController(AppDbContext context)
         {
             _context = context;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<PatientDto>>> GetPatients()
+        [Authorize(Roles = "Patient")]
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMyProfile()
         {
-            var patients = await _context.Patients
+            var patientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var patient = await _context.Patients
                 .Include(p => p.Region)
-                .Select(p => new PatientDto
-                {
-                    PatientID = p.PatientID,
-                    FName = p.FName,
-                    LName = p.LName,
-                    DateOfBirth = p.DateOfBirth,
-                    Gender = p.Gender,
-                    //RegionName = p.Region.RegionName
-                }).ToListAsync();
-
-            return Ok(patients);
+                .FirstOrDefaultAsync(p => p.PatientID == patientId);
+            if (patient == null) return NotFound();
+            return Ok(patient);
         }
 
-        [HttpPost]
-        public async Task<ActionResult<Patient>> PostPatient(PatientPostDto dto)
+        [Authorize(Roles = "Patient")]
+        [HttpPut("me")]
+        public async Task<IActionResult> UpdateMyProfile(PatientUpdateDto updated)
         {
-            var patient = new Patient
+            var patientId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var patient = await _context.Patients.FindAsync(patientId);
+            if (patient == null) return NotFound();
+
+            patient.FName = updated.FName;
+            patient.LName = updated.LName;
+            patient.DateOfBirth = updated.DateOfBirth;
+            patient.BloodType = updated.BloodType;
+            patient.EmergencyContact = updated.EmergencyContact;
+            patient.OrganDonorStatus = updated.OrganDonorStatus;
+            patient.RegionID = updated.RegionID;
+
+            await _context.SaveChangesAsync();
+            return Ok("Profile updated.");
+        }
+
+
+        [Authorize(Roles = "Doctor")]
+        [HttpGet]
+        public async Task<IActionResult> GetAllPatients()
+        {
+            return Ok(await _context.Patients.ToListAsync());
+        }
+
+        [Authorize(Roles = "Doctor")]
+        [HttpPost]
+        public async Task<IActionResult> AddPatient(PatientPostDto dto)
+        {
+            var newPatient = new Patient
             {
+                PatientID = dto.PatientID,
+                MedicalID = dto.MedicalID,
                 FName = dto.FName,
                 LName = dto.LName,
-                DateOfBirth = dto.DateOfBirth,
                 Gender = dto.Gender,
-                RegionID = dto.RegionID
+                DateOfBirth = dto.DateOfBirth,
+                BloodType = dto.BloodType,
+                EmergencyContact = dto.EmergencyContact,
+                OrganDonorStatus = dto.OrganDonorStatus,
+                RegionID = dto.RegionID,
+                // You can set default values for UserName/PasswordHash or expect another dto for full registration
+                UserName = dto.PatientID, // example default
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456") // default password (you can customize this logic)
             };
 
-            _context.Patients.Add(patient);
+            _context.Patients.Add(newPatient);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetPatients), new { id = patient.PatientID }, patient);
+            return Ok("Patient added successfully.");
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdatePatient(int id, PatientPostDto dto)
-        {
-            var patient = await _context.Patients.FindAsync(id);
-            if (patient == null) return NotFound();
 
-            patient.FName = dto.FName;
-            patient.LName = dto.LName;
-            patient.Gender = dto.Gender;
-            patient.MedicalID = dto.MedicalID;
-            // map other properties as needed
-
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-
+        [Authorize(Roles = "Doctor")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePatient(int id)
+        public async Task<IActionResult> DeletePatient(string id)
         {
             var patient = await _context.Patients.FindAsync(id);
             if (patient == null) return NotFound();
-
             _context.Patients.Remove(patient);
             await _context.SaveChangesAsync();
-            return NoContent();
+            return Ok("Patient deleted.");
         }
-
     }
-
 }
