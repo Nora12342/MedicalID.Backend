@@ -7,5 +7,6 @@
 
         public int MedicationID { get; set; }
         public Medication Medication { get; set; }
+        public string Note { get; set; }
     }
 }

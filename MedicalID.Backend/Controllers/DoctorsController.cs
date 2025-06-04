@@ -93,6 +93,7 @@ namespace MedicalID.Backend.Controllers
             var doctor = new Doctor
             {
                 DoctorID = dto.DoctorID,
+                ReferenceID = dto.ReferenceID,
                 FName = dto.FName,
                 LName = dto.LName,
                 SpecializationID = dto.SpecializationID,

@@ -1,9 +1,10 @@
 ﻿using System.Text;
-using MedicalID.Backend.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
+using MedicalID.Backend.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,9 +48,9 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// ✅ JWT Auth
-builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer("Bearer", options =>
+// ✅ Correct JWT Setup using JwtBearerDefaults.AuthenticationScheme
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -81,11 +82,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
+app.UseAuthentication(); // 🟢 Must come before UseAuthorization
 app.UseAuthorization();
 app.MapControllers();
 
-Console.WriteLine(builder.Configuration.GetConnectionString("MedicalIDContext"));
-
 app.Run();
-

@@ -17,7 +17,7 @@ namespace MedicalID.Backend.Models
         public ICollection<Patient> Patients { get; set; }
 
         public ICollection<Hospital> Hospitals { get; set; } // ✅ Required for relationship
-        public ICollection<City> Cities { get; set; }         // if using WithMany(r => r.Cities)
+        
     }
 
 

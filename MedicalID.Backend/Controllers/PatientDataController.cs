@@ -25,8 +25,7 @@ namespace MedicalID.Backend.Controllers
                 .Select(pc => new
                 {
                     pc.ConditionID,
-                    pc.Condition.ConditionName,
-                    pc.Note
+                    pc.Condition.ConditionName  
                 })
                 .ToListAsync();
 

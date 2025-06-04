@@ -74,6 +74,7 @@ namespace MedicalID.Backend.Controllers
             return NotFound("User not found.");
         }
 
+
         [HttpPost("register/doctor")]
         public async Task<ActionResult> RegisterDoctor(DoctorRegisterDto dto)
         {

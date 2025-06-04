@@ -8,8 +8,10 @@ using MedicalID.Backend.Dtos.MedicalCondition;
 
 namespace MedicalID.Backend.Controllers
 {
+
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Patient")]
     public class MedicalConditionsController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -19,61 +21,85 @@ namespace MedicalID.Backend.Controllers
             _context = context;
         }
 
-        // 🧑‍🦰 Patient: View their conditions
-        [Authorize(Roles = "Patient")]
-        [HttpGet("my")]
-        public async Task<IActionResult> GetMyConditions()
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<MedicalConditionDto>>> GetMyConditions()
         {
-            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(userIdStr, out int patientId))
-                return Unauthorized("Invalid patient ID in token.");
+            var nationalId = User.FindFirstValue("sub");
+            if (string.IsNullOrWhiteSpace(nationalId))
+                return Unauthorized("Token missing sub claim.");
 
-            var conditions = await _context.PatientConditions
-                .Where(pc => pc.PatientID == patientId)
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientID == nationalId);
+            if (patient == null)
+                return Unauthorized("Patient not found.");
+
+            var result = await _context.PatientConditions
+                .Where(pc => pc.PatientID == patient.ID)
                 .Include(pc => pc.Condition)
                 .Select(pc => new MedicalConditionDto
                 {
                     ConditionID = pc.ConditionID,
                     ConditionName = pc.Condition.ConditionName,
                     Description = pc.Condition.Description,
-                    DiagnosedDate = pc.Condition.DiagnosedDate
-                    // Removed Note ✅
+                    DiagnosedDate = pc.Condition.DiagnosedDate,
+                    Note = pc.Note
                 })
                 .ToListAsync();
 
-            return Ok(conditions);
+            return Ok(result);
         }
 
-        // 👨‍⚕️ Doctor: Assign condition to patient
-        [Authorize(Roles = "Doctor")]
         [HttpPost]
         public async Task<IActionResult> AddCondition([FromBody] PatientConditionPostDto dto)
         {
-            var newEntry = new PatientCondition
+            var nationalId = User.FindFirstValue("sub");
+            if (string.IsNullOrWhiteSpace(nationalId))
+                return Unauthorized("Token missing sub claim.");
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientID == nationalId);
+            if (patient == null)
+                return Unauthorized("Patient not found.");
+
+            var exists = await _context.PatientConditions
+                .AnyAsync(pc => pc.PatientID == patient.ID && pc.ConditionID == dto.ConditionID);
+
+            if (exists)
+                return BadRequest("This condition is already added.");
+
+            var patientCondition = new PatientCondition
             {
-                PatientID = dto.PatientID,
-                ConditionID = dto.ConditionID
-                // Removed Note ✅
+                PatientID = patient.ID,
+                ConditionID = dto.ConditionID,
+                Note = dto.Note
             };
 
-            _context.PatientConditions.Add(newEntry);
+            _context.PatientConditions.Add(patientCondition);
             await _context.SaveChangesAsync();
-            return Ok("Condition added successfully.");
+
+            return Ok("Condition added.");
         }
 
-        // 👨‍⚕️ Doctor: Remove assigned condition
-        [Authorize(Roles = "Doctor")]
-        [HttpDelete("{patientId:int}/{conditionId}")]
-        public async Task<IActionResult> DeleteCondition(int patientId, int conditionId)
+        [HttpDelete("{conditionId}")]
+        public async Task<IActionResult> DeleteCondition(int conditionId)
         {
-            var entry = await _context.PatientConditions.FindAsync(patientId, conditionId);
-            if (entry == null) return NotFound();
+            var nationalId = User.FindFirstValue("sub");
+            if (string.IsNullOrWhiteSpace(nationalId))
+                return Unauthorized("Token missing sub claim.");
 
-            _context.PatientConditions.Remove(entry);
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientID == nationalId);
+            if (patient == null)
+                return Unauthorized("Patient not found.");
+
+            var record = await _context.PatientConditions.FindAsync(patient.ID, conditionId);
+            if (record == null)
+                return NotFound();
+
+            _context.PatientConditions.Remove(record);
             await _context.SaveChangesAsync();
 
-            return Ok("Condition removed successfully.");
+            return Ok("Condition removed.");
         }
     }
+
+
 
 }

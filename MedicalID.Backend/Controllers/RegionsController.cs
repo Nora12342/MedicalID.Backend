@@ -22,7 +22,10 @@ namespace MedicalID.Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetRegions()
         {
-            return Ok(await _context.Regions.Include(r => r.Cities).ToListAsync());
+            // ✅ FIXED: Remove .Include(r => r.Cities) since Region no longer has Cities
+            return Ok(await _context.Regions
+                .Include(r => r.City) // Optional: include city info for each region
+                .ToListAsync());
         }
 
         [Authorize(Roles = "Doctor")]
@@ -45,10 +48,9 @@ namespace MedicalID.Backend.Controllers
             return Ok("Region created successfully.");
         }
 
-
         [Authorize(Roles = "Doctor")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRegion(string id)
+        public async Task<IActionResult> DeleteRegion(int id)
         {
             var region = await _context.Regions.FindAsync(id);
             if (region == null) return NotFound();
@@ -57,4 +59,5 @@ namespace MedicalID.Backend.Controllers
             return Ok("Region deleted.");
         }
     }
+
 }

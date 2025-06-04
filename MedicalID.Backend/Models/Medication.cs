@@ -6,7 +6,7 @@ namespace MedicalID.Backend.Models
     {
         [Key]
         public int MedicationID { get; set; }
-        public string PatientID { get; set; }
+        public int PatientID { get; set; }
         public string MedicationName { get; set; }
         public string Dosage { get; set; }
         public string Frequency { get; set; }

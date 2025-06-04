@@ -7,6 +7,7 @@
 
         public int AllergyID { get; set; }
         public Allergy Allergy { get; set; }
+        public string Note { get; set; }
     }
 
 }

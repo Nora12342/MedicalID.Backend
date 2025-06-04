@@ -19,17 +19,17 @@ namespace MedicalID.Backend.Controllers
             _context = context;
         }
 
-        // ✅ Patients can view their own record history
+        // ✅ Patients can view their own records via MedicalID
         [Authorize(Roles = "Patient")]
         [HttpGet("my")]
         public async Task<IActionResult> GetMyRecordHistory()
         {
-            var patientIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(patientIdStr, out int patientId))
-                return Unauthorized("Invalid patient ID in token.");
+            var medicalId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(medicalId))
+                return Unauthorized("MedicalID missing from token.");
 
             var records = await _context.RecordHistories
-                .Where(r => r.PatientID == patientId)
+                .Where(r => r.MedicalID == medicalId)
                 .Include(r => r.Doctor)
                 .Include(r => r.AccessLog)
                 .ToListAsync();
@@ -37,7 +37,7 @@ namespace MedicalID.Backend.Controllers
             return Ok(records);
         }
 
-        // ✅ Doctors can create record history if access is granted
+        // ✅ Doctors can create record history (MedicalID-based)
         [Authorize(Roles = "Doctor")]
         [HttpPost]
         public async Task<IActionResult> AddRecordHistory([FromBody] RecordHistoryPostDto dto)
@@ -48,7 +48,7 @@ namespace MedicalID.Backend.Controllers
 
             var accessGranted = await _context.AccessLogs
                 .AnyAsync(a => a.DoctorID == dto.DoctorID &&
-                               a.PatientID == dto.PatientID &&
+                               a.MedicalID == dto.MedicalID &&
                                a.AccessGranted == true);
 
             if (!accessGranted)
@@ -60,7 +60,7 @@ namespace MedicalID.Backend.Controllers
 
             var newRecord = new RecordHistory
             {
-                PatientID = dto.PatientID,
+                MedicalID = dto.MedicalID,
                 DoctorID = dto.DoctorID,
                 LogID = dto.LogID,
                 DiagnosisNotes = dto.DiagnosisNotes,
@@ -75,7 +75,7 @@ namespace MedicalID.Backend.Controllers
             return Ok("Record added.");
         }
 
-        // ✅ Doctors can update record history if access is granted
+        // ✅ Doctors can update record history
         [Authorize(Roles = "Doctor")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRecordHistory(int id, [FromBody] RecordHistoryDTO dto)
@@ -90,7 +90,7 @@ namespace MedicalID.Backend.Controllers
 
             var accessGranted = await _context.AccessLogs
                 .AnyAsync(a => a.DoctorID == doctorId &&
-                               a.PatientID == record.PatientID &&
+                               a.MedicalID == record.MedicalID &&
                                a.AccessGranted == true);
 
             if (!accessGranted)
@@ -104,23 +104,23 @@ namespace MedicalID.Backend.Controllers
             return Ok("Record updated.");
         }
 
-        // ✅ Doctors can view patient records if access is granted
+        // ✅ Doctors can view records by MedicalID
         [Authorize(Roles = "Doctor")]
-        [HttpGet("patient/{id}")]
-        public async Task<IActionResult> GetPatientRecords(int id) // <-- FIX: id is int
+        [HttpGet("patient/{medicalId}")]
+        public async Task<IActionResult> GetPatientRecords(string medicalId)
         {
             var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             var accessGranted = await _context.AccessLogs
                 .AnyAsync(a => a.DoctorID == doctorId &&
-                               a.PatientID == id &&
+                               a.MedicalID == medicalId &&
                                a.AccessGranted == true);
 
             if (!accessGranted)
                 return StatusCode(403, "Access not granted by the patient.");
 
             var records = await _context.RecordHistories
-                .Where(r => r.PatientID == id)
+                .Where(r => r.MedicalID == medicalId)
                 .Include(r => r.AccessLog)
                 .Include(r => r.Doctor)
                 .ToListAsync();
@@ -128,17 +128,19 @@ namespace MedicalID.Backend.Controllers
             return Ok(records);
         }
 
-        // ✅ Doctors can delete record history if access is granted
+        // ✅ Doctors can delete a record
         [Authorize(Roles = "Doctor")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRecordHistory(int id)
         {
+            var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
             var record = await _context.RecordHistories.FindAsync(id);
             if (record == null) return NotFound();
 
             var accessGranted = await _context.AccessLogs
-                .AnyAsync(a => a.DoctorID == record.DoctorID &&
-                               a.PatientID == record.PatientID &&
+                .AnyAsync(a => a.DoctorID == doctorId &&
+                               a.MedicalID == record.MedicalID &&
                                a.AccessGranted == true);
 
             if (!accessGranted)

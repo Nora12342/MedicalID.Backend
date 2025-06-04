@@ -21,16 +21,19 @@ namespace MedicalID.Backend.Controllers
             _context = context;
         }
 
-        // ✅ GET: Return allergy list for current patient
         [HttpGet]
         public async Task<ActionResult<IEnumerable<AllergyDto>>> GetMyAllergies()
         {
-            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(userIdString, out int userId))
-                return Unauthorized("Invalid patient ID in token.");
+            var nationalId = User.FindFirstValue("sub");
+            if (string.IsNullOrWhiteSpace(nationalId))
+                return Unauthorized("Token missing sub claim.");
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientID == nationalId);
+            if (patient == null)
+                return Unauthorized("Patient not found.");
 
             var result = await _context.PatientAllergies
-                .Where(pa => pa.PatientID == userId)
+                .Where(pa => pa.PatientID == patient.ID)
                 .Include(pa => pa.Allergy)
                 .Select(pa => new AllergyDto
                 {
@@ -44,24 +47,28 @@ namespace MedicalID.Backend.Controllers
             return Ok(result);
         }
 
-        // ✅ POST: Link an existing allergy to current patient
         [HttpPost]
-        public async Task<IActionResult> AddAllergy([FromBody] int allergyId)
+        public async Task<IActionResult> AddAllergy([FromBody] PatientAllergyPostDto dto)
         {
-            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(userIdString, out int userId))
-                return Unauthorized("Invalid patient ID in token.");
+            var nationalId = User.FindFirstValue("sub");
+            if (string.IsNullOrWhiteSpace(nationalId))
+                return Unauthorized("Token missing sub claim.");
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientID == nationalId);
+            if (patient == null)
+                return Unauthorized("Patient not found.");
 
             var exists = await _context.PatientAllergies
-                .AnyAsync(pa => pa.PatientID == userId && pa.AllergyID == allergyId);
+                .AnyAsync(pa => pa.PatientID == patient.ID && pa.AllergyID == dto.AllergyID);
 
             if (exists)
                 return BadRequest("This allergy is already added.");
 
             var patientAllergy = new PatientAllergy
             {
-                PatientID = userId,
-                AllergyID = allergyId
+                PatientID = patient.ID,
+                AllergyID = dto.AllergyID,
+                Note = dto.Note
             };
 
             _context.PatientAllergies.Add(patientAllergy);
@@ -70,16 +77,18 @@ namespace MedicalID.Backend.Controllers
             return Ok("Allergy added successfully.");
         }
 
-        // ✅ DELETE: Remove allergy by ID
         [HttpDelete("{allergyId}")]
         public async Task<IActionResult> DeleteAllergy(int allergyId)
         {
-            var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!int.TryParse(userIdString, out int userId))
-                return Unauthorized("Invalid patient ID in token.");
+            var nationalId = User.FindFirstValue("sub");
+            if (string.IsNullOrWhiteSpace(nationalId))
+                return Unauthorized("Token missing sub claim.");
 
-            var record = await _context.PatientAllergies.FindAsync(userId, allergyId);
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.PatientID == nationalId);
+            if (patient == null)
+                return Unauthorized("Patient not found.");
 
+            var record = await _context.PatientAllergies.FindAsync(patient.ID, allergyId);
             if (record == null)
                 return NotFound();
 

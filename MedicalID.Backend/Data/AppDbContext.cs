@@ -44,6 +44,13 @@ namespace MedicalID.Backend.Data
                 .HasForeignKey(a => a.DoctorID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<AccessLog>()
+               .HasOne(a => a.PatientByMedicalID)
+               .WithMany()
+               .HasForeignKey(a => a.MedicalID)
+               .HasPrincipalKey(p => p.MedicalID)
+               .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<RecordHistory>()
                 .HasKey(r => r.RecordHistoryID);
 
@@ -53,11 +60,11 @@ namespace MedicalID.Backend.Data
                 .HasForeignKey(r => r.LogID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-
             modelBuilder.Entity<RecordHistory>()
-                .HasOne(r => r.Patient)
-                .WithMany(p => p.RecordHistories)
-                .HasForeignKey(r => r.PatientID)
+                .HasOne(rh => rh.Patient)
+                .WithMany()
+                .HasForeignKey(rh => rh.MedicalID)
+                .HasPrincipalKey(p => p.MedicalID) // <- because you're linking via alternate key
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<RecordHistory>()

@@ -10,7 +10,8 @@ namespace MedicalID.Backend.Models
         public int RecordHistoryID { get; set; }
 
         [Required]
-        public int PatientID { get; set; } // ✅ Changed from string to int
+        [StringLength(7)]
+        public string MedicalID { get; set; }
 
         [Required]
         [StringLength(14)]
@@ -32,7 +33,9 @@ namespace MedicalID.Backend.Models
         public string? SurgeryNote { get; set; }
 
         // Navigation properties
-        public Patient? Patient { get; set; } // ✅ correct
+        [ForeignKey(nameof(MedicalID))]
+        public Patient? Patient { get; set; }
+
         public Doctor? Doctor { get; set; }
 
         [ForeignKey(nameof(LogID))]

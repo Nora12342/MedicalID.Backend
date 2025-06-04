@@ -10,18 +10,15 @@ public static class JwtHelper
     {
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, userId),
+            new Claim(JwtRegisteredClaimNames.Sub, userId), // accepts string for both doctor ID or patient national ID
             new Claim(JwtRegisteredClaimNames.UniqueName, username),
             new Claim(ClaimTypes.Role, role),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
         var keyBytes = Encoding.UTF8.GetBytes(config["Jwt:Key"]);
-
         if (keyBytes.Length < 32)
-        {
-            throw new InvalidOperationException("JWT key must be at least 256 bits (32 bytes). Update your appsettings.json.");
-        }
+            throw new InvalidOperationException("JWT key must be at least 256 bits (32 bytes).");
 
         var key = new SymmetricSecurityKey(keyBytes);
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
