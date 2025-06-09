@@ -5,8 +5,9 @@ namespace MedicalID.Backend.Models
     public class AskDoctor
     {
         [Key]
+        [Required]
         public int MessageID { get; set; }
-
+        [Required]
         public int PatientID { get; set; }
         public Patient Patient { get; set; }
 
@@ -14,6 +15,8 @@ namespace MedicalID.Backend.Models
         public Doctor Doctor { get; set; }
 
         public string Subject { get; set; }
+        [Required]
+
         public string MessageContent { get; set; }
 
         public bool IsRead { get; set; }

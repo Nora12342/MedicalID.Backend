@@ -26,7 +26,7 @@ namespace MedicalID.Backend.Controllers
             var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             var messages = await _context.AskDoctors
-                .Where(m => m.DoctorID == doctorId)
+                //.Where(m => m.DoctorID == doctorId)
                 .Include(m => m.Patient)
                 .Include(m => m.Doctor)
                 .Select(m => new AskDoctorDto

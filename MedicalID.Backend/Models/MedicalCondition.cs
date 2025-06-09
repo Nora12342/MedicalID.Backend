@@ -6,7 +6,9 @@ public class MedicalCondition
 {
     [Key]
     public int ConditionID { get; set; }
+    [Required]
     public string ConditionName { get; set; }
+    [Required]
     public string Description { get; set; }
     public DateTime? DiagnosedDate { get; set; }
     public string Note { get; set; }

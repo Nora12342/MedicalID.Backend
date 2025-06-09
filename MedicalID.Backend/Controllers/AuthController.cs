@@ -55,7 +55,8 @@ namespace MedicalID.Backend.Controllers
             {
                 if (BCrypt.Net.BCrypt.Verify(dto.Password, patient.PasswordHash))
                 {
-                    var token = JwtHelper.GenerateToken(patient.PatientID, patient.UserName, "Patient", _config);
+                    var token = JwtHelper.GenerateToken(patient.ID.ToString(), patient.UserName, "Patient", _config);
+
                     return Ok(new
                     {
                         token,

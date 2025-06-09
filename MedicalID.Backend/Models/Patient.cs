@@ -18,24 +18,35 @@ namespace MedicalID.Backend.Models
         [StringLength(7)]
         public string MedicalID { get; set; } // Last 7 digits of National ID (unique)
 
+        [Required]
         public string FName { get; set; }
+
+        [Required]
         public string LName { get; set; }
 
+        [Required]
+
         public string UserName { get; set; }
+
+        [Required]
         public string PasswordHash { get; set; }
 
+        [Required]
         public DateTime DateOfBirth { get; set; }
+
         public string BloodType { get; set; }
+        [Required]
         public string EmergencyContact { get; set; }
         public bool OrganDonorStatus { get; set; }
+        [Required]
         public string Gender { get; set; }
 
         public int RegionID { get; set; }
         public Region Region { get; set; }
-        
 
-        [Required]
-        public string Email { get; set; }
+
+
+        public string? Email { get; set; }
 
         public string? ResetToken { get; set; }
         public DateTime? ResetTokenExpiry { get; set; }
@@ -50,6 +61,7 @@ namespace MedicalID.Backend.Models
         public ICollection<PatientMedication> PatientMedications { get; set; }
         public ICollection<PatientCondition> PatientConditions { get; set; }
         public ICollection<PatientAllergy> PatientAllergies { get; set; }
+
     }
 
 }

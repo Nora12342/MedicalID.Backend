@@ -82,12 +82,14 @@ namespace MedicalID.Backend.Controllers
         {
             var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
+            // No Include() — avoid Patient navigation completely
             var record = await _context.RecordHistories.FindAsync(id);
             if (record == null) return NotFound();
 
             if (record.DoctorID != doctorId)
                 return Forbid("You cannot update another doctor’s record.");
 
+            // Confirm patient access via MedicalID in AccessLogs
             var accessGranted = await _context.AccessLogs
                 .AnyAsync(a => a.DoctorID == doctorId &&
                                a.MedicalID == record.MedicalID &&
@@ -96,6 +98,7 @@ namespace MedicalID.Backend.Controllers
             if (!accessGranted)
                 return StatusCode(403, "Access not granted by the patient.");
 
+            // ✅ Update only allowed fields
             record.DiagnosisNotes = dto.DiagnosisNotes;
             record.TreatmentPlan = dto.TreatmentPlan;
             record.UpdateTime = DateTime.UtcNow;
@@ -103,6 +106,7 @@ namespace MedicalID.Backend.Controllers
             await _context.SaveChangesAsync();
             return Ok("Record updated.");
         }
+
 
         // ✅ Doctors can view records by MedicalID
         [Authorize(Roles = "Doctor")]

@@ -10,7 +10,7 @@ namespace MedicalID.Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Doctor")]
+    [Authorize]
     public class AccessLogsController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -50,11 +50,15 @@ namespace MedicalID.Backend.Controllers
 
             if (doctorId == null || dto.PatientID <= 0)
                 return BadRequest("Invalid doctor or patient ID.");
+            if (string.IsNullOrWhiteSpace(dto.MedicalID))
+                return BadRequest("MedicalID is required.");
+
 
             var log = new AccessLog
             {
                 DoctorID = doctorId,
-                PatientID = dto.PatientID, // ✅ dto.PatientID is now int
+                PatientID = dto.PatientID,
+                MedicalID = dto.MedicalID,
                 AccessTime = DateTime.UtcNow,
                 Purpose = dto.Purpose,
                 AccessStatus = "Pending",
@@ -67,43 +71,33 @@ namespace MedicalID.Backend.Controllers
             return Ok("Access request sent.");
         }
 
-         //✅ Patient: Approve or reject access
+        //✅ Patient: Approve or reject access
         [Authorize(Roles = "Patient")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAccessLog(int id, [FromBody] AccessLogUpdateDTO dto)
         {
-            //var patientIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            //if (!int.TryParse(patientIdStr, out int patientId))
-            //    return Unauthorized("Invalid patient ID in token.");
+            var patientIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            //var patientId = _context.Patients.Find(id);
-            //if ( patientId is  null )
-            //{
-            //    return BadRequest("this id is null");
-            //}
+            if (!int.TryParse(patientIdClaim, out int patientId))
+                return Unauthorized("Invalid patient ID in token.");
 
-            var patientId = dto.PatientId;
+            // ✅ Secure check: only allow access if the patient owns the access log
+            var log = await _context.AccessLogs
+                .FirstOrDefaultAsync(a => a.LogID == id && a.PatientID == patientId);
 
-            var log = await _context.AccessLogs.FirstOrDefaultAsync(
-                a => a.LogID == id && a.PatientID == patientId); // ✅ int == int
+            if (log == null)
+                return Forbid("Access log not found or not owned by this patient.");
 
-            try
-            {
-                log.AccessGranted = dto.AccessGranted;
-                log.AccessStatus = dto.AccessStatus ?? (dto.AccessGranted ? "Approved" : "Rejected");
-                await _context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.InnerException);
-            }
+            // ✅ Perform the update
+            log.AccessGranted = dto.AccessGranted;
+            log.AccessStatus = dto.AccessStatus ?? (dto.AccessGranted ? "Approved" : "Rejected");
 
-            //if (log == null)
-            //    return NotFound("Access request not found or does not belong to this patient.");
-
+            await _context.SaveChangesAsync();
 
             return Ok("Access log updated successfully.");
         }
+
+
     }
 
 }

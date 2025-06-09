@@ -18,8 +18,8 @@ namespace MedicalID.Backend.Models
         [StringLength(7)] // Make sure this matches the actual MedicalID length in the Patients table
         public string MedicalID { get; set; }
 
-        [ForeignKey(nameof(MedicalID))]
-        public Patient PatientByMedicalID { get; set; }
+        //[ForeignKey(nameof(MedicalID))]
+        //public Patient PatientByMedicalID { get; set; }
 
         public DateTime AccessTime { get; set; }
 

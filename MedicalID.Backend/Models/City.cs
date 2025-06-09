@@ -6,6 +6,7 @@ namespace MedicalID.Backend.Models
     {
         [Key]
         public int CityID { get; set; }
+        [Required]
         public string CityName { get; set; }
         public ICollection<Region> Regions { get; set; }
         

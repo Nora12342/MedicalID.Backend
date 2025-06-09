@@ -36,6 +36,7 @@ namespace MedicalID.Backend.Models
         [ForeignKey(nameof(MedicalID))]
         public Patient? Patient { get; set; }
 
+        [ForeignKey(nameof(DoctorID))]
         public Doctor? Doctor { get; set; }
 
         [ForeignKey(nameof(LogID))]

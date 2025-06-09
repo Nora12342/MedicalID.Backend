@@ -10,6 +10,7 @@ public class Allergy
     public string Allergen { get; set; }
     public string Severity { get; set; }
     public string Reaction { get; set; }
+    public string? Note { get; set; }
 
     public ICollection<PatientAllergy> PatientAllergies { get; set; }
 

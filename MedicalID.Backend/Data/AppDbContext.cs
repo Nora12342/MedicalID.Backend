@@ -44,12 +44,12 @@ namespace MedicalID.Backend.Data
                 .HasForeignKey(a => a.DoctorID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<AccessLog>()
-               .HasOne(a => a.PatientByMedicalID)
-               .WithMany()
-               .HasForeignKey(a => a.MedicalID)
-               .HasPrincipalKey(p => p.MedicalID)
-               .OnDelete(DeleteBehavior.Restrict);
+            //modelBuilder.Entity<AccessLog>()
+            //   .HasOne(a => a.PatientByMedicalID)
+            //   .WithMany()
+            //   .HasForeignKey(a => a.MedicalID)
+            //   .HasPrincipalKey(p => p.MedicalID)
+            //   .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<RecordHistory>()
                 .HasKey(r => r.RecordHistoryID);
