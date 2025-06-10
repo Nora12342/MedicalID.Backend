@@ -11,15 +11,13 @@ namespace MedicalID.Backend.Models
         public string DoctorID { get; set; }
         public Doctor Doctor { get; set; }
 
-        public int PatientID { get; set; }
-        public Patient Patient { get; set; }
 
         [Required]
-        [StringLength(7)] // Make sure this matches the actual MedicalID length in the Patients table
+        [StringLength(7)]
         public string MedicalID { get; set; }
 
-        //[ForeignKey(nameof(MedicalID))]
-        //public Patient PatientByMedicalID { get; set; }
+        [ForeignKey(nameof(MedicalID))]
+        public Patient PatientByMedicalID { get; set; }
 
         public DateTime AccessTime { get; set; }
 
@@ -29,6 +27,7 @@ namespace MedicalID.Backend.Models
 
         public bool AccessGranted { get; set; }
     }
+
 
 
 }

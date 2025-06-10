@@ -30,7 +30,7 @@ namespace MedicalID.Backend.Controllers
                 {
                     LogID = log.LogID,
                     DoctorID = log.DoctorID,
-                    PatientID = log.PatientID,
+                    MedicalID = log.MedicalID, // ✅ بدل PatientID
                     AccessTime = log.AccessTime,
                     Purpose = log.Purpose,
                     AccessStatus = log.AccessStatus,
@@ -41,6 +41,7 @@ namespace MedicalID.Backend.Controllers
             return Ok(logs);
         }
 
+
         // ✅ Doctor: Request access to patient
         [Authorize(Roles = "Doctor")]
         [HttpPost]
@@ -48,16 +49,12 @@ namespace MedicalID.Backend.Controllers
         {
             var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (doctorId == null || dto.PatientID <= 0)
-                return BadRequest("Invalid doctor or patient ID.");
-            if (string.IsNullOrWhiteSpace(dto.MedicalID))
-                return BadRequest("MedicalID is required.");
-
+            if (doctorId == null || string.IsNullOrWhiteSpace(dto.MedicalID))
+                return BadRequest("Doctor or MedicalID is invalid.");
 
             var log = new AccessLog
             {
                 DoctorID = doctorId,
-                PatientID = dto.PatientID,
                 MedicalID = dto.MedicalID,
                 AccessTime = DateTime.UtcNow,
                 Purpose = dto.Purpose,
@@ -71,19 +68,20 @@ namespace MedicalID.Backend.Controllers
             return Ok("Access request sent.");
         }
 
+
         //✅ Patient: Approve or reject access
         [Authorize(Roles = "Patient")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAccessLog(int id, [FromBody] AccessLogUpdateDTO dto)
         {
-            var patientIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var medicalId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (!int.TryParse(patientIdClaim, out int patientId))
-                return Unauthorized("Invalid patient ID in token.");
+            if (string.IsNullOrEmpty(medicalId))
+                return Unauthorized("Invalid MedicalID in token.");
 
             // ✅ Secure check: only allow access if the patient owns the access log
             var log = await _context.AccessLogs
-                .FirstOrDefaultAsync(a => a.LogID == id && a.PatientID == patientId);
+                .FirstOrDefaultAsync(a => a.LogID == id && a.MedicalID == medicalId);
 
             if (log == null)
                 return Forbid("Access log not found or not owned by this patient.");
@@ -96,6 +94,7 @@ namespace MedicalID.Backend.Controllers
 
             return Ok("Access log updated successfully.");
         }
+
 
 
     }

@@ -28,15 +28,20 @@ namespace MedicalID.Backend.Data
         public DbSet<Specialization> Specializations { get; set; }
 
 
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            // AccessLog Configurations
+            // This assumes Patient does NOT have ICollection<AccessLog> AccessLogs { get; set; }
             modelBuilder.Entity<AccessLog>()
-                .HasOne(a => a.Patient)
-                .WithMany(p => p.AccessLogs)
-                .HasForeignKey(a => a.PatientID)
-                .OnDelete(DeleteBehavior.Restrict);
+                .HasOne(a => a.PatientByMedicalID)
+                .WithMany() // No navigation property on Patient for AccessLogs
+                .HasForeignKey(a => a.MedicalID)
+                .HasPrincipalKey(p => p.MedicalID)
+                .OnDelete(DeleteBehavior.Restrict); // Important: Restrict cascade delete to avoid cycles
 
             modelBuilder.Entity<AccessLog>()
                 .HasOne(a => a.Doctor)
@@ -44,27 +49,22 @@ namespace MedicalID.Backend.Data
                 .HasForeignKey(a => a.DoctorID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            //modelBuilder.Entity<AccessLog>()
-            //   .HasOne(a => a.PatientByMedicalID)
-            //   .WithMany()
-            //   .HasForeignKey(a => a.MedicalID)
-            //   .HasPrincipalKey(p => p.MedicalID)
-            //   .OnDelete(DeleteBehavior.Restrict);
-
+            // RecordHistory Configurations
             modelBuilder.Entity<RecordHistory>()
                 .HasKey(r => r.RecordHistoryID);
 
             modelBuilder.Entity<RecordHistory>()
                 .HasOne(r => r.AccessLog)
-                .WithMany()
+                .WithMany() // Assuming AccessLog does NOT have ICollection<RecordHistory>
                 .HasForeignKey(r => r.LogID)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<RecordHistory>()
                 .HasOne(rh => rh.Patient)
-                .WithMany()
+                // **FIXED THIS LINE: Explicitly specify navigation property**
+                .WithMany(p => p.RecordHistories) // Assuming Patient has public ICollection<RecordHistory>? RecordHistories { get; set; }
                 .HasForeignKey(rh => rh.MedicalID)
-                .HasPrincipalKey(p => p.MedicalID) // <- because you're linking via alternate key
+                .HasPrincipalKey(p => p.MedicalID) // Linking RecordHistory.MedicalID to Patient.MedicalID
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<RecordHistory>()
@@ -73,6 +73,7 @@ namespace MedicalID.Backend.Data
                 .HasForeignKey(r => r.DoctorID)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // RecordHistoryFile Configurations
             modelBuilder.Entity<RecordHistoryFile>()
                 .HasOne(f => f.RecordHistory)
                 .WithMany(r => r.Files)
@@ -80,12 +81,14 @@ namespace MedicalID.Backend.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
 
+            // Hospital Configurations
             modelBuilder.Entity<Hospital>()
                 .HasOne(h => h.Region)
                 .WithMany(r => r.Hospitals)
                 .HasForeignKey(h => h.RegionID)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Join Table Composite Keys (Ensure these are correct)
             modelBuilder.Entity<PatientAllergy>()
                 .HasKey(pa => new { pa.PatientID, pa.AllergyID });
 
@@ -95,12 +98,33 @@ namespace MedicalID.Backend.Data
             modelBuilder.Entity<PatientMedication>()
                 .HasKey(pm => new { pm.PatientID, pm.MedicationID });
 
+            // PatientCondition Relationships (from previous fix)
+            modelBuilder.Entity<PatientCondition>()
+                .HasOne(pc => pc.Patient)
+                .WithMany(p => p.PatientConditions) // Assuming Patient model has ICollection<PatientCondition>
+                .HasForeignKey(pc => pc.PatientID)
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<PatientCondition>()
                 .HasOne(pc => pc.Condition)
-                .WithMany()
-                .HasForeignKey(pc => pc.ConditionID);
+                .WithMany(mc => mc.PatientConditions) // Assuming MedicalCondition model has ICollection<PatientCondition>
+                .HasForeignKey(pc => pc.ConditionID)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            // PatientMedication Relationships
+            modelBuilder.Entity<PatientMedication>()
+                .HasOne(pm => pm.Patient)
+                .WithMany(p => p.PatientMedications)
+                .HasForeignKey(pm => pm.PatientID)
+                .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<PatientMedication>()
+                .HasOne(pm => pm.Medication)
+                .WithMany(m => m.PatientMedications)
+                .HasForeignKey(pm => pm.MedicationID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // AskDoctor Relationships
             modelBuilder.Entity<AskDoctor>()
                 .HasOne(ad => ad.Patient)
                 .WithMany(p => p.AskDoctors)
@@ -113,11 +137,13 @@ namespace MedicalID.Backend.Data
                 .HasForeignKey(ad => ad.DoctorID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Region Relationships
             modelBuilder.Entity<Region>()
                 .HasOne(r => r.City)
                 .WithMany(c => c.Regions)
                 .HasForeignKey(r => r.CityID);
 
+            // Appointment Relationships
             modelBuilder.Entity<Appointment>()
                 .HasOne(a => a.Patient)
                 .WithMany(p => p.Appointments)
@@ -130,18 +156,19 @@ namespace MedicalID.Backend.Data
                 .HasForeignKey(a => a.DoctorID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Doctor Specialization Relationship
             modelBuilder.Entity<Doctor>()
                .HasOne(d => d.Specialization)
                .WithMany(s => s.Doctors)
                .HasForeignKey(d => d.SpecializationID)
                .OnDelete(DeleteBehavior.Restrict);
 
+            // Patient Unique Indexes for Alternate Keys (Ensure these match your Patient model)
             modelBuilder.Entity<Patient>()
-                .HasIndex(p => p.PatientID).IsUnique();
+                .HasIndex(p => p.PatientID).IsUnique(); // If PatientID is a unique identifier other than PK
 
             modelBuilder.Entity<Patient>()
-                .HasIndex(p => p.MedicalID).IsUnique();
-
+                .HasIndex(p => p.MedicalID).IsUnique(); // Crucial for HasPrincipalKey
         }
     }
 }

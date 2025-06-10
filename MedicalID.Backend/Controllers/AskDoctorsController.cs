@@ -78,36 +78,52 @@ namespace MedicalID.Backend.Controllers
         }
 
         [Authorize(Roles = "Patient")]
-        [HttpPost]
+        [HttpPost] // Assuming this is a [HttpPost] method
         public async Task<IActionResult> AskDoctor([FromBody] AskDoctorPostDto dto)
         {
-            //var patientIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value??"1";
-            //if (!int.TryParse(patientIdStr, out int patientId))
-            //    return Unauthorized("Invalid patient ID in token.");
+            // ✅ Get the patient ID from the authenticated user's token
+            var patientIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value; // Use full namespace for clarity
 
-            //var PatientId = _context.Find(dto.PatientID);
+            if (!int.TryParse(patientIdClaim, out int patientId))
+            {
+                return Unauthorized("Invalid patient ID in token."); // Should not happen with valid tokens
+            }
 
-            var patientId = 1;
+            // Remove or comment out the hardcoded line:
+            // var patientId = 1;
 
+            // ✅ Security check: Ensure the request is for the authenticated patient themselves
+            // This is important! A patient should only be able to ask a question for their own ID.
             if (patientId != dto.PatientID)
-                return Forbid();
+            {
+                return Forbid("You can only submit questions for your own patient ID.");
+            }
 
+            // ✅ Validate doctor existence
             var doctorExists = await _context.Doctors.AnyAsync(d => d.DoctorID == dto.DoctorID);
-            if (!doctorExists) return BadRequest("Doctor not found.");
+            if (!doctorExists)
+            {
+                return BadRequest("Doctor not found.");
+            }
 
+            // ✅ Validate payment
             if (!dto.IsPaid || dto.AmountPaid <= 0)
+            {
                 return BadRequest("Payment is required before submitting a question.");
+            }
 
+            // ✅ Create the message object
             var message = new AskDoctor
             {
                 DoctorID = dto.DoctorID,
-                PatientID = dto.PatientID,
+                PatientID = patientId, // ✅ Use the patientId obtained from the token here
                 MessageContent = dto.Question,
                 SentAt = DateTime.UtcNow,
                 IsRead = false,
                 IsPaid = dto.IsPaid,
                 AmountPaid = dto.AmountPaid,
-                UpiRef = dto.UpiRef,
+                // Assuming UpjRef should be UpRef based on common naming or if it's dto.UpjRef
+                UpiRef = dto.UpiRef, // Or dto.UpRef if it's a typo in your DTO
                 Subject = dto.Subject
             };
 
@@ -116,6 +132,7 @@ namespace MedicalID.Backend.Controllers
 
             return Ok("Question sent to doctor.");
         }
+
 
         [Authorize(Roles = "Doctor")]
         [HttpPut("respond/{id}")]

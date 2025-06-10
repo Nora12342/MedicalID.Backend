@@ -2,8 +2,10 @@
 {
     public class PatientConditionPostDto
     {
-        public int PatientID { get; set; }
-        public int ConditionID { get; set; }
-        public string Note { get; set; }
+        public string ConditionName { get; set; } // Change from ConditionID to ConditionName
+        public string Description { get; set; } // You'll likely need Description to create a new condition
+        public DateTime? DiagnosedDate { get; set; } // And DiagnosedDate if it's part of the new condition
+        public string? Note { get; set; }
+
     }
 }

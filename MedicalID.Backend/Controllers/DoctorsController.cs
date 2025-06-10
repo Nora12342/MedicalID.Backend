@@ -21,9 +21,11 @@ namespace MedicalID.Backend.Controllers
         }
 
         [HttpGet("me")]
+        [Authorize(Roles = "Doctor")]
         public async Task<IActionResult> GetMyProfile()
         {
             var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
             var doctor = await _context.Doctors
                 .Include(d => d.Specialization)
                 .Include(d => d.Region)
@@ -31,17 +33,22 @@ namespace MedicalID.Backend.Controllers
 
             if (doctor == null) return NotFound();
 
-            var dto = new DoctorDto
+            var dto = new
             {
-                DoctorID = doctor.DoctorID,
-                FName = doctor.FName,
-                LName = doctor.LName,
-                SpecializationName = doctor.Specialization?.Name,
-                RegionName = doctor.Region?.Name
+                doctor.DoctorID,
+                doctor.ReferenceID,
+                doctor.FName,
+                doctor.LName,
+                doctor.Email,
+                doctor.UserName,
+                doctor.Phone,
+                RegionName = doctor.Region?.Name,
+                SpecializationName = doctor.Specialization?.Name
             };
 
             return Ok(dto);
         }
+
 
         [HttpPut("me")]
         public async Task<IActionResult> UpdateMyProfile(DoctorUpdateDto updated)

@@ -53,13 +53,13 @@ namespace MedicalID.Backend.Models
 
         // Navigations
         public ICollection<Appointment> Appointments { get; set; }
-        public ICollection<RecordHistory> RecordHistories { get; set; }
+        public ICollection<RecordHistory>? RecordHistories { get; set; }
         public ICollection<AccessLog> AccessLogs { get; set; } = new HashSet<AccessLog>();
         public ICollection<AskDoctor> AskDoctors { get; set; }
 
         // Many-to-many navigations
-        public ICollection<PatientMedication> PatientMedications { get; set; }
-        public ICollection<PatientCondition> PatientConditions { get; set; }
+        public ICollection<PatientMedication>? PatientMedications { get; set; }
+        public ICollection<PatientCondition>? PatientConditions { get; set; }
         public ICollection<PatientAllergy> PatientAllergies { get; set; }
 
     }

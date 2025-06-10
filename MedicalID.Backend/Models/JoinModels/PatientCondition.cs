@@ -7,7 +7,7 @@
 
         public int ConditionID { get; set; }
         public MedicalCondition Condition { get; set; }
-        public string Note { get; set; }
+        
     }
 
 }
