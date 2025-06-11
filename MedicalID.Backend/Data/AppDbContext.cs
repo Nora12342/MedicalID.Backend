@@ -38,7 +38,7 @@ namespace MedicalID.Backend.Data
             // This assumes Patient does NOT have ICollection<AccessLog> AccessLogs { get; set; }
             modelBuilder.Entity<AccessLog>()
                 .HasOne(a => a.PatientByMedicalID)
-                .WithMany() // No navigation property on Patient for AccessLogs
+                .WithMany(p => p.AccessLogs) // No navigation property on Patient for AccessLogs
                 .HasForeignKey(a => a.MedicalID)
                 .HasPrincipalKey(p => p.MedicalID)
                 .OnDelete(DeleteBehavior.Restrict); // Important: Restrict cascade delete to avoid cycles

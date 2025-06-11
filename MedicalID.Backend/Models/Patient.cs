@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using MedicalID.Backend.Models.JoinModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -54,6 +55,7 @@ namespace MedicalID.Backend.Models
         // Navigations
         public ICollection<Appointment> Appointments { get; set; }
         public ICollection<RecordHistory>? RecordHistories { get; set; }
+        [InverseProperty("PatientByMedicalID")]
         public ICollection<AccessLog> AccessLogs { get; set; } = new HashSet<AccessLog>();
         public ICollection<AskDoctor> AskDoctors { get; set; }
 

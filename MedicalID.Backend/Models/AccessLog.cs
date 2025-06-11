@@ -17,6 +17,7 @@ namespace MedicalID.Backend.Models
         public string MedicalID { get; set; }
 
         [ForeignKey(nameof(MedicalID))]
+        
         public Patient PatientByMedicalID { get; set; }
 
         public DateTime AccessTime { get; set; }

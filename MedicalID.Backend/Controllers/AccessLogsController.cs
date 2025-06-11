@@ -74,19 +74,24 @@ namespace MedicalID.Backend.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateAccessLog(int id, [FromBody] AccessLogUpdateDTO dto)
         {
-            var medicalId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var patientIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(patientIdStr, out int patientId))
+                return Unauthorized("Invalid patient ID in token.");
 
-            if (string.IsNullOrEmpty(medicalId))
-                return Unauthorized("Invalid MedicalID in token.");
+            // ❗ نجيب MedicalID من قاعدة البيانات للمريض ده
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.ID == patientId);
+            if (patient == null)
+                return NotFound("Patient not found.");
 
-            // ✅ Secure check: only allow access if the patient owns the access log
+            var medicalId = patient.MedicalID;
+
+            // ✅ نتأكد إن الـ AccessLog ده يخص المريض فعلاً
             var log = await _context.AccessLogs
                 .FirstOrDefaultAsync(a => a.LogID == id && a.MedicalID == medicalId);
 
             if (log == null)
-                return Forbid("Access log not found or not owned by this patient.");
+                return StatusCode(403, "Access log not found or not owned by this patient.");
 
-            // ✅ Perform the update
             log.AccessGranted = dto.AccessGranted;
             log.AccessStatus = dto.AccessStatus ?? (dto.AccessGranted ? "Approved" : "Rejected");
 
@@ -94,6 +99,8 @@ namespace MedicalID.Backend.Controllers
 
             return Ok("Access log updated successfully.");
         }
+
+
 
 
 
