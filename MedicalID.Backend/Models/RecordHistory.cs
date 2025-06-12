@@ -42,10 +42,9 @@ namespace MedicalID.Backend.Models
         [ForeignKey(nameof(LogID))]
         public AccessLog? AccessLog { get; set; }
 
-        public List<RecordHistoryFile>? Files { get; set; }
+        public ICollection<RecordHistoryFile> RecordHistoryFiles { get; set; } = new List<RecordHistoryFile>();
+
     }
-
-
 
 }
 

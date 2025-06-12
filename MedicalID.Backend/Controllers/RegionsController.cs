@@ -18,7 +18,7 @@ namespace MedicalID.Backend.Controllers
             _context = context;
         }
 
-        [Authorize(Roles = "Doctor,Patient")]
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetRegions()
         {

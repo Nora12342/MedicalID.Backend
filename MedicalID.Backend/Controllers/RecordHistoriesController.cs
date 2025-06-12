@@ -186,6 +186,95 @@ namespace MedicalID.Backend.Controllers
             return Ok(records);
         }
 
+        [HttpPost("upload-file/{recordId}")]
+        public async Task<IActionResult> UploadFile(int recordId, IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded.");
+
+            var record = await _context.RecordHistories.FindAsync(recordId);
+            if (record == null)
+                return NotFound("Record not found.");
+
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+            Directory.CreateDirectory(uploadsFolder);
+
+            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var newFile = new RecordHistoryFile
+            {
+                RecordHistoryID = recordId,
+                FilePath = "/uploads/" + fileName,
+                UploadedAt = DateTime.UtcNow
+            };
+
+            _context.RecordHistoryFiles.Add(newFile);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "File uploaded", filePath = newFile.FilePath });
+        }
+        [Authorize(Roles = "Patient")]
+        [HttpGet("labtests")]
+        public async Task<IActionResult> GetMyLabTests()
+        {
+            var patientIdFromTokenStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(patientIdFromTokenStr))
+                return Unauthorized("Authentication failed: Patient ID missing in token.");
+
+            if (!int.TryParse(patientIdFromTokenStr, out int patientIntId))
+                return Unauthorized("Invalid patient ID format in token.");
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.ID == patientIntId);
+            if (patient == null)
+                return Unauthorized("Patient not found.");
+
+            var medicalId = patient.MedicalID;
+
+            var files = await _context.RecordHistories
+                .Where(r => r.MedicalID == medicalId)
+                .Include(r => r.RecordHistoryFiles)
+                .SelectMany(r => r.RecordHistoryFiles.Select(f => new {
+                    f.FileID,
+                    f.FilePath,
+                    f.UploadedAt
+                }))
+                .ToListAsync();
+
+            if (files.Count == 0)
+                return Ok(new { message = "No lab test files attached.", labTestFiles = new List<object>() });
+
+            return Ok(new { labTestFiles = files });
+        }
+
+        [Authorize(Roles = "Patient")]
+        [HttpDelete("labtests/{fileId}")]
+        public async Task<IActionResult> DeleteLabTestFile(int fileId)
+        {
+            var file = await _context.RecordHistoryFiles.FindAsync(fileId);
+            if (file == null)
+                return NotFound("File not found.");
+
+            // احذف من السيرفر كمان لو موجود
+            var physicalPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", file.FilePath.TrimStart('/'));
+            if (System.IO.File.Exists(physicalPath))
+            {
+                System.IO.File.Delete(physicalPath);
+            }
+
+            _context.RecordHistoryFiles.Remove(file);
+            await _context.SaveChangesAsync();
+
+            return Ok("File deleted successfully.");
+        }
+
+
+
         // Doctors can delete a record
         [Authorize(Roles = "Doctor")]
         [HttpDelete("{id}")]

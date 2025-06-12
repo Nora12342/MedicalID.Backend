@@ -28,6 +28,8 @@ namespace MedicalID.Backend.Models
         [Required]
         public string Phone { get; set; }
 
+        [Required]
+        public string ApprovalStatus { get; set; } = "Pending";
         public int RegionID { get; set; }
         public Region Region { get; set; }
         public string? ResetToken { get; set; }

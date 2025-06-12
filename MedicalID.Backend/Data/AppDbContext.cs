@@ -76,7 +76,7 @@ namespace MedicalID.Backend.Data
             // RecordHistoryFile Configurations
             modelBuilder.Entity<RecordHistoryFile>()
                 .HasOne(f => f.RecordHistory)
-                .WithMany(r => r.Files)
+                .WithMany(r => r.RecordHistoryFiles)
                 .HasForeignKey(f => f.RecordHistoryID)
                 .OnDelete(DeleteBehavior.Cascade);
 
