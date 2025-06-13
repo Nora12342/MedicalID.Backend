@@ -100,10 +100,6 @@ namespace MedicalID.Backend.Controllers
             return Ok("Access log updated successfully.");
         }
 
-
-
-
-
     }
 
 }

@@ -58,6 +58,8 @@ namespace MedicalID.Backend.Controllers
             return Ok(result);
         }
 
+
+
         [HttpPost]
         public async Task<IActionResult> AddMedication([FromBody] MedicationPostDto dto)
         {

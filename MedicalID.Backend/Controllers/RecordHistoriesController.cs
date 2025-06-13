@@ -273,6 +273,35 @@ namespace MedicalID.Backend.Controllers
             return Ok("File deleted successfully.");
         }
 
+        [Authorize(Roles = "Doctor")]
+        [HttpGet("labtests/{medicalId}")]
+        public async Task<IActionResult> GetPatientLabTests(string medicalId)
+        {
+            var doctorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var accessGranted = await _context.AccessLogs.AnyAsync(a =>
+                a.DoctorID == doctorId && a.MedicalID == medicalId && a.AccessGranted == true);
+
+            if (!accessGranted)
+                return Forbid("Access not granted by patient.");
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.MedicalID == medicalId);
+            if (patient == null)
+                return NotFound("Patient not found.");
+
+            var files = await _context.RecordHistories
+                .Where(r => r.MedicalID == medicalId)
+                .Include(r => r.RecordHistoryFiles)
+                .SelectMany(r => r.RecordHistoryFiles.Select(f => new {
+                    f.FileID,
+                    f.FilePath,
+                    f.UploadedAt
+                }))
+                .ToListAsync();
+
+            return Ok(new { labTestFiles = files });
+        }
+
 
 
         // Doctors can delete a record

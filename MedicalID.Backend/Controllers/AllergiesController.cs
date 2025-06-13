@@ -56,6 +56,7 @@ namespace MedicalID.Backend.Controllers
             return Ok(result);
         }
 
+
         [HttpPost]
         public async Task<IActionResult> AddAllergy([FromBody] PatientAllergyPostDto dto) // This DTO should contain Allergen (string) and Note
         {
@@ -101,6 +102,8 @@ namespace MedicalID.Backend.Controllers
 
             return Ok("Allergy added successfully.");
         }
+
+
 
         [HttpDelete("{allergyId}")]
         public async Task<IActionResult> DeleteAllergy(int allergyId)

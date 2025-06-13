@@ -129,5 +129,21 @@ namespace MedicalID.Backend.Controllers
             await _context.SaveChangesAsync();
             return Ok("Patient deleted.");
         }
+
+        [Authorize(Roles = "Patient")]
+        [HttpGet("my-medical-id")]
+        public async Task<IActionResult> GetMyMedicalID()
+        {
+            var patientIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(patientIdStr, out int patientId))
+                return Unauthorized();
+
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.ID == patientId);
+            if (patient == null)
+                return NotFound();
+
+            return Ok(new { medicalID = patient.MedicalID });
+        }
+
     }
 }
