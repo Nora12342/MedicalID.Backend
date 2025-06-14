@@ -20,7 +20,7 @@
                 _context = context;
             }
 
-            // ✅ GET: Return all cities with their regions
+            
             [Authorize(Roles = "Doctor,Patient")]
             [HttpGet]
             public async Task<IActionResult> GetCities()
@@ -32,7 +32,7 @@
                 return Ok(cities);
             }
 
-            // ✅ POST: Add new city + regions using clean DTO
+            
             [Authorize(Roles = "Doctor")]
             [HttpPost]
             public async Task<IActionResult> AddCity([FromBody] CityPostDto dto)
@@ -55,7 +55,7 @@
                 return Ok("City added.");
             }
 
-            // ✅ DELETE: Delete city by ID
+            
             [Authorize(Roles = "Doctor")]
             [HttpDelete("{id}")]
             public async Task<IActionResult> DeleteCity(int id)

@@ -32,7 +32,7 @@ namespace MedicalID.Backend.Controllers
             return Ok(specializations);
         }
 
-        // POST: api/Specializations (Optional Admin-only feature)
+        
         [HttpPost]
         public async Task<ActionResult> AddSpecialization(CreateSpecializationDTO dto)
         {

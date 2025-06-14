@@ -15,7 +15,7 @@ namespace MedicalID.Backend.Models
 
         [Required]
         [StringLength(14)]
-        public string DoctorID { get; set; } = string.Empty; // ✅ still string
+        public string DoctorID { get; set; } = string.Empty; 
 
         [Required]
         public int LogID { get; set; }
@@ -32,7 +32,7 @@ namespace MedicalID.Backend.Models
         public string? Surgery { get; set; }
         public string? SurgeryNote { get; set; }
 
-        // Navigation properties
+        
         [ForeignKey(nameof(MedicalID))]
         public Patient? Patient { get; set; }
 

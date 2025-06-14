@@ -30,7 +30,7 @@ namespace MedicalID.Backend.Controllers
                 {
                     LogID = log.LogID,
                     DoctorID = log.DoctorID,
-                    MedicalID = log.MedicalID, // ✅ بدل PatientID
+                    MedicalID = log.MedicalID, 
                     AccessTime = log.AccessTime,
                     Purpose = log.Purpose,
                     AccessStatus = log.AccessStatus,
@@ -78,14 +78,14 @@ namespace MedicalID.Backend.Controllers
             if (!int.TryParse(patientIdStr, out int patientId))
                 return Unauthorized("Invalid patient ID in token.");
 
-            // ❗ نجيب MedicalID من قاعدة البيانات للمريض ده
+            
             var patient = await _context.Patients.FirstOrDefaultAsync(p => p.ID == patientId);
             if (patient == null)
                 return NotFound("Patient not found.");
 
             var medicalId = patient.MedicalID;
 
-            // ✅ نتأكد إن الـ AccessLog ده يخص المريض فعلاً
+            
             var log = await _context.AccessLogs
                 .FirstOrDefaultAsync(a => a.LogID == id && a.MedicalID == medicalId);
 

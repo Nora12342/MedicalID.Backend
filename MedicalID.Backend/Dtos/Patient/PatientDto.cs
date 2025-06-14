@@ -4,10 +4,10 @@ namespace MedicalID.Backend.Dtos.Patient
 {
     public class PatientDto
     {
-        public int ID { get; set; } // New primary key
+        public int ID { get; set; } 
 
-        public string PatientID { get; set; } // National ID (14 digits)
-        public string MedicalID { get; set; } // Last 7 digits
+        public string PatientID { get; set; } 
+        public string MedicalID { get; set; } 
 
         public string FName { get; set; }
         public string LName { get; set; }
@@ -18,9 +18,9 @@ namespace MedicalID.Backend.Dtos.Patient
         public bool OrganDonorStatus { get; set; }
 
         public int RegionID { get; set; }
-        public string RegionName { get; set; } // Optional if you include region details
+        public string RegionName { get; set; } 
 
-        // Optional summaries
+        
         public List<MedicalConditionDto> MedicalConditions { get; set; }
         public List<AllergyDto> Allergies { get; set; }
         public List<MedicationDto> Medications { get; set; }

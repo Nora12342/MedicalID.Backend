@@ -22,9 +22,9 @@ namespace MedicalID.Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetRegions()
         {
-            // ✅ FIXED: Remove .Include(r => r.Cities) since Region no longer has Cities
+            
             return Ok(await _context.Regions
-                .Include(r => r.City) // Optional: include city info for each region
+                .Include(r => r.City) 
                 .ToListAsync());
         }
 

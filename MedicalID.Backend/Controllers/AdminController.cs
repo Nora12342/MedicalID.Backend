@@ -15,7 +15,7 @@ namespace MedicalID.Backend.Controllers
             _context = context;
         }
 
-        // ✅ 1. إحصائيات عامة
+        
         [HttpGet("stats")]
         public async Task<IActionResult> GetStats()
         {
@@ -36,7 +36,7 @@ namespace MedicalID.Backend.Controllers
             });
         }
 
-        // ✅ 2. الإيرادات
+      
         [HttpGet("revenues")]
         public async Task<IActionResult> GetRevenues()
         {
@@ -47,7 +47,7 @@ namespace MedicalID.Backend.Controllers
             return Ok(new { revenue = totalRevenue });
         }
 
-        // ✅ 3. أحدث تسجيلات الدكاترة
+       
         [HttpGet("recent-doctors")]
         public async Task<IActionResult> GetRecentDoctors()
         {

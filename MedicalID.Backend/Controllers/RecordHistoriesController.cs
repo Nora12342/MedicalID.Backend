@@ -4,6 +4,7 @@ using MedicalID.Backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 using System.Security.Claims;
 
 namespace MedicalID.Backend.Controllers
@@ -19,7 +20,7 @@ namespace MedicalID.Backend.Controllers
             _context = context;
         }
 
-        // Patients can view their own records via MedicalID
+        
         [Authorize(Roles = "Patient")]
         [HttpGet("my")]
         public async Task<IActionResult> GetMyRecordHistory()
@@ -43,10 +44,10 @@ namespace MedicalID.Backend.Controllers
 
             var records = await _context.RecordHistories
                 .Where(r => r.MedicalID == patientMedicalId)
-                .Include(r => r.Doctor) // Include related Doctor data
-                .Include(r => r.AccessLog) // Include related AccessLog data
-                                           // .Include(r => r.Files) // Uncomment if you need to include files and have a DTO for them
-                .Select(r => new RecordHistoryDTO // Correctly map to the updated DTO
+                .Include(r => r.Doctor) 
+                .Include(r => r.AccessLog) 
+                                           
+                .Select(r => new RecordHistoryDTO 
                 {
                     RecordHistoryID = r.RecordHistoryID,
                     MedicalID = r.MedicalID,
@@ -58,8 +59,8 @@ namespace MedicalID.Backend.Controllers
                     UpdateTime = r.UpdateTime,
                     Surgery = r.Surgery,
                     SurgeryNote = r.SurgeryNote,
-                    DoctorName = r.Doctor != null ? r.Doctor.FName : "N/A", // Map Doctor's full name
-                    // Files = r.Files != null ? r.Files.Select(f => new RecordHistoryFileDto { /* map properties */ }).ToList() : null // Example for mapping files
+                    DoctorName = r.Doctor != null ? r.Doctor.FName : "N/A", 
+                    
                 })
                 .ToListAsync();
 
@@ -71,7 +72,8 @@ namespace MedicalID.Backend.Controllers
             return Ok(records);
         }
 
-        // Doctors can create record history (MedicalID-based)
+
+
         [Authorize(Roles = "Doctor")]
         [HttpPost]
         public async Task<IActionResult> AddRecordHistory([FromBody] RecordHistoryPostDto dto)
@@ -80,19 +82,28 @@ namespace MedicalID.Backend.Controllers
             if (doctorId != dto.DoctorID)
                 return Forbid("You cannot use another doctor's ID.");
 
-            var accessGranted = await _context.AccessLogs
-                .AnyAsync(a => a.DoctorID == dto.DoctorID &&
-                               a.MedicalID == dto.MedicalID &&
-                               a.AccessGranted == true);
+            
+            var accessLog = await _context.AccessLogs
+                .Where(a => a.DoctorID == dto.DoctorID &&
+                            a.MedicalID == dto.MedicalID &&
+                            a.AccessGranted == true) 
+                .OrderByDescending(a => a.AccessTime) 
+                .Select(a => new { a.LogID, a.MedicalID, a.DoctorID }) 
+                .FirstOrDefaultAsync();
 
-            if (!accessGranted)
-                return StatusCode(403, "Access not granted by the patient.");
+            if (accessLog == null)
+            {
+                
+                
+                return StatusCode(403, "No active access permission found for this patient by this doctor. Please ensure the patient has granted access.");
+            }
 
+            
             var newRecord = new RecordHistory
             {
                 MedicalID = dto.MedicalID,
                 DoctorID = dto.DoctorID,
-                LogID = dto.LogID,
+                LogID = accessLog.LogID, 
                 DiagnosisNotes = dto.DiagnosisNotes,
                 TreatmentPlan = dto.TreatmentPlan,
                 Surgery = dto.Surgery,
@@ -105,14 +116,10 @@ namespace MedicalID.Backend.Controllers
             return Ok("Record added successfully.");
         }
 
-        // Doctors can update record history
-        // Note: The input DTO for PUT/Update should match the fields you allow to be updated.
-        // Your current RecordHistoryDTO is missing Surgery and SurgeryNote, so be careful here.
-        // I will assume you want to allow updating Surgery and SurgeryNote, so I'll add them to the DTO for PUT requests.
-        // If not, you might need a separate UpdateRecordHistoryDto or adjust this DTO.
+
         [Authorize(Roles = "Doctor")]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateRecordHistory(int id, [FromBody] RecordHistoryPostDto dto) // Using RecordHistoryPostDto for consistency for update fields
+        public async Task<IActionResult> UpdateRecordHistory(int id, [FromBody] RecordHistoryPostDto dto) 
         {
             var doctorId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -130,18 +137,18 @@ namespace MedicalID.Backend.Controllers
             if (!accessGranted)
                 return StatusCode(403, "Access not granted by the patient.");
 
-            // Update allowed fields based on the DTO
+           
             record.DiagnosisNotes = dto.DiagnosisNotes;
             record.TreatmentPlan = dto.TreatmentPlan;
-            record.Surgery = dto.Surgery; // Now included in the PostDto
-            record.SurgeryNote = dto.SurgeryNote; // Now included in the PostDto
+            record.Surgery = dto.Surgery; 
+            record.SurgeryNote = dto.SurgeryNote; 
             record.UpdateTime = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return Ok("Record updated successfully.");
         }
 
-        // Doctors can view records by MedicalID
+        
         [Authorize(Roles = "Doctor")]
         [HttpGet("patient/{medicalId}")]
         public async Task<IActionResult> GetPatientRecords(string medicalId)
@@ -159,9 +166,8 @@ namespace MedicalID.Backend.Controllers
             var records = await _context.RecordHistories
                 .Where(r => r.MedicalID == medicalId)
                 .Include(r => r.AccessLog)
-                .Include(r => r.Doctor)
-                // .Include(r => r.Files) // Uncomment if you need to include files
-                .Select(r => new RecordHistoryDTO // Correctly map to the updated DTO
+                
+                .Select(r => new RecordHistoryDTO 
                 {
                     RecordHistoryID = r.RecordHistoryID,
                     MedicalID = r.MedicalID,
@@ -174,7 +180,7 @@ namespace MedicalID.Backend.Controllers
                     Surgery = r.Surgery,
                     SurgeryNote = r.SurgeryNote,
                     DoctorName = r.Doctor != null ? r.Doctor.FName : "N/A",
-                    // Files = r.Files != null ? r.Files.Select(f => new RecordHistoryFileDto { /* map properties */ }).ToList() : null // Example for mapping files
+                   
                 })
                 .ToListAsync();
 
@@ -260,7 +266,7 @@ namespace MedicalID.Backend.Controllers
             if (file == null)
                 return NotFound("File not found.");
 
-            // احذف من السيرفر كمان لو موجود
+            
             var physicalPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", file.FilePath.TrimStart('/'));
             if (System.IO.File.Exists(physicalPath))
             {
@@ -304,7 +310,7 @@ namespace MedicalID.Backend.Controllers
 
 
 
-        // Doctors can delete a record
+        
         [Authorize(Roles = "Doctor")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRecordHistory(int id)

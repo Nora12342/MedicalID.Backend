@@ -41,17 +41,15 @@ namespace MedicalID.Backend.Controllers
             // Get medications through the PatientMedication join table
             var result = await _context.PatientMedications
                 .Where(pm => pm.PatientID == patient.ID)
-                .Include(pm => pm.Medication) // Include the related Medication entity
+                .Include(pm => pm.Medication) 
                 .Select(pm => new MedicationDto
                 {
                     MedicationID = pm.MedicationID,
-                    MedicationName = pm.Medication.MedicationName, // Get from linked Medication
-                    Dosage = pm.Medication.Dosage,                 // Get from linked Medication
-                    Frequency = pm.Medication.Frequency,           // Get from linked Medication
-                    PrescribedDate = pm.Medication.PrescribedDate, // Get from linked Medication
-                    // Note is now from the join table if you want to expose it in DTO
-                    // If MedicationDto doesn't have a Note, remove this line or add Note to MedicationDto
-                    // Note = pm.Note
+                    MedicationName = pm.Medication.MedicationName, 
+                    Dosage = pm.Medication.Dosage,                 
+                    Frequency = pm.Medication.Frequency,          
+                    PrescribedDate = pm.Medication.PrescribedDate, 
+                    
                 })
                 .ToListAsync();
 
@@ -76,8 +74,7 @@ namespace MedicalID.Backend.Controllers
             if (patient == null)
                 return Unauthorized("Patient not found.");
 
-            // Check if the medication (by name, dosage, frequency) already exists in the general Medications table
-            // This prevents duplicate entries in the core Medications table if it's meant to be a lookup
+            
             var existingMedication = await _context.Medications.FirstOrDefaultAsync(m =>
                 m.MedicationName == dto.MedicationName &&
                 m.Dosage == dto.Dosage &&
@@ -87,25 +84,24 @@ namespace MedicalID.Backend.Controllers
 
             if (existingMedication == null)
             {
-                // If medication doesn't exist, create it in the Medications table
+               
                 medicationToLink = new Medication
                 {
                     MedicationName = dto.MedicationName,
                     Dosage = dto.Dosage,
                     Frequency = dto.Frequency,
                     PrescribedDate = dto.PrescribedDate,
-                    // Note is NOT on the Medication table, it's on PatientMedication
-                    // No PatientID here either
+                    
                 };
                 _context.Medications.Add(medicationToLink);
-                await _context.SaveChangesAsync(); // Save to get the MedicationID for linking
+                await _context.SaveChangesAsync(); 
             }
             else
             {
                 medicationToLink = existingMedication;
             }
 
-            // Check if this patient already has this specific medication linked
+            
             var patientMedicationExists = await _context.PatientMedications
                 .AnyAsync(pm => pm.PatientID == patient.ID && pm.MedicationID == medicationToLink.MedicationID);
 
@@ -114,7 +110,7 @@ namespace MedicalID.Backend.Controllers
                 return BadRequest("This medication is already linked to this patient.");
             }
 
-            // Create the link in the PatientMedication join table
+            
             var patientMedication = new PatientMedication
             {
                 PatientID = patient.ID,
@@ -144,7 +140,7 @@ namespace MedicalID.Backend.Controllers
             if (patient == null)
                 return Unauthorized("Patient not found.");
 
-            // Find the specific PatientMedication join record
+            
             var patientMedicationRecord = await _context.PatientMedications
                 .FirstOrDefaultAsync(pm => pm.PatientID == patient.ID && pm.MedicationID == medicationId);
 

@@ -6,10 +6,11 @@ using Microsoft.OpenApi.Models;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
 using MedicalID.Backend.Data;
+using BCrypt.Net; 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Add services
+
 builder.Services.AddControllers()
     .AddJsonOptions(x =>
         x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
@@ -25,12 +26,11 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 });
 
-
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "MedicalID.Backend", Version = "v1" });
 
-    // 🔐 JWT Swagger config
+
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -56,7 +56,6 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// ✅ Correct JWT Setup using JwtBearerDefaults.AuthenticationScheme
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -77,7 +76,7 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// 🌐 Middleware
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/error");
@@ -91,9 +90,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
-app.UseAuthentication(); // 🟢 Must come before UseAuthorization
+app.UseAuthentication();
 app.UseAuthorization();
 app.UseStaticFiles();
 app.MapControllers();
 
 app.Run();
+
+
+
+

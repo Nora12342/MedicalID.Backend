@@ -18,8 +18,8 @@ namespace MedicalID.Backend.Models
         [Required]
         public DateTime AppointmentDate { get; set; }
         public string? Notes { get; set; }
-        public string AppointmentType { get; set; } // e.g., Clinic, Emergency
-        public string Status { get; set; } // Scheduled, Completed, Cancelled
+        public string AppointmentType { get; set; }
+        public string Status { get; set; } 
 
     }
 

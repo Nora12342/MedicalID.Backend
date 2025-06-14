@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using BCrypt.Net;
 
 namespace MedicalID.Backend.Controllers
 {
@@ -29,18 +30,21 @@ namespace MedicalID.Backend.Controllers
         [HttpPost("login")]
         public async Task<ActionResult> Login(LoginDto dto)
         {
-            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserName == dto.UserName);
+            string trimmedUserName = dto.UserName.Trim();
+
+            // ✅ 1. Doctor Login
+            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserName == trimmedUserName);
             if (doctor != null)
             {
                 if (BCrypt.Net.BCrypt.Verify(dto.Password, doctor.PasswordHash))
                 {
-                    var token = JwtHelper.GenerateToken(doctor.DoctorID, doctor.UserName, "Doctor", _config);
+                    var token = JwtHelper.GenerateToken(doctor.DoctorID.ToString(), doctor.UserName, "Doctor", _config);
                     return Ok(new
                     {
                         token,
                         user = new LoginResponseDto
                         {
-                            UserId = doctor.DoctorID,
+                            UserId = doctor.DoctorID.ToString(),
                             Role = "Doctor",
                             UserName = doctor.UserName,
                             FullName = $"{doctor.FName} {doctor.LName}"
@@ -50,7 +54,8 @@ namespace MedicalID.Backend.Controllers
                 return Unauthorized("Invalid password.");
             }
 
-            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserName == dto.UserName);
+            // ✅ 2. Patient Login
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserName == trimmedUserName);
             if (patient != null)
             {
                 if (BCrypt.Net.BCrypt.Verify(dto.Password, patient.PasswordHash))
@@ -62,7 +67,7 @@ namespace MedicalID.Backend.Controllers
                         token,
                         user = new LoginResponseDto
                         {
-                            UserId = patient.PatientID,
+                            UserId = patient.ID.ToString(),
                             Role = "Patient",
                             UserName = patient.UserName,
                             FullName = $"{patient.FName} {patient.LName}"

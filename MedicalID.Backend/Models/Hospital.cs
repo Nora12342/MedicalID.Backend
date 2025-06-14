@@ -12,7 +12,7 @@ public class Hospital
     [Required]
     public string ContactInformation { get; set; }
 
-    public int RegionID { get; set; } // ✅ must be int
-    public Region Region { get; set; } // ✅ navigation
+    public int RegionID { get; set; } 
+    public Region Region { get; set; } 
 }
 

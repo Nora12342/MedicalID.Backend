@@ -14,7 +14,7 @@ namespace MedicalID.Backend.Controllers
             _context = context;
         }
 
-        // ✅ 1. GET /api/PatientData/Conditions/{patientId}
+        
         [HttpGet("Conditions/{patientId}")]
         [Authorize(Roles = "Doctor")]
         public async Task<IActionResult> GetPatientConditions(int patientId)
@@ -32,7 +32,7 @@ namespace MedicalID.Backend.Controllers
             return Ok(conditions);
         }
 
-        // ✅ 2. GET /api/PatientData/Allergies/{patientId}
+        
         [HttpGet("Allergies/{patientId}")]
         [Authorize(Roles = "Doctor")]
         public async Task<IActionResult> GetPatientAllergies(int patientId)
@@ -52,7 +52,7 @@ namespace MedicalID.Backend.Controllers
             return Ok(allergies);
         }
 
-        // ✅ 3. GET /api/PatientData/Medications/{patientId}
+        
         [HttpGet("Medications/{patientId}")]
         [Authorize(Roles = "Doctor")]
         public async Task<IActionResult> GetPatientMedications(int patientId)

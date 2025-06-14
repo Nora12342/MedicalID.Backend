@@ -3,7 +3,7 @@
     public class AccessLogPostDto
     {
         public string DoctorID { get; set; }
-        public string MedicalID { get; set; } // ✅ REQUIRED
+        public string MedicalID { get; set; } 
 
         public DateTime AccessTime { get; set; }
         public string Purpose { get; set; }

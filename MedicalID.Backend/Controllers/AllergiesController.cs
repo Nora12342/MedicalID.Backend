@@ -1,6 +1,5 @@
 ﻿using MedicalID.Backend.Data;
 using MedicalID.Backend.Dtos;
-// Assuming your DTOs are in a subfolder like Allergy, adjust namespace if different
 using MedicalID.Backend.Dtos.Allergy;
 using MedicalID.Backend.Models.JoinModels;
 using Microsoft.AspNetCore.Authorization;
@@ -40,13 +39,13 @@ namespace MedicalID.Backend.Controllers
                 return Unauthorized("Patient not found.");
 
             var result = await _context.PatientAllergies
-                .Where(pa => pa.PatientID == patient.ID) // Use patient.ID for the join
-                .Include(pa => pa.Allergy) // Include the Allergy navigation property
-                .Select(pa => new PatientAllergyDto // Map to PatientAllergyDto
+                .Where(pa => pa.PatientID == patient.ID) 
+                .Include(pa => pa.Allergy) 
+                .Select(pa => new PatientAllergyDto 
                 {
                     AllergyID = pa.AllergyID,
-                    Allergen = pa.Allergy.Allergen, // Access Allergen from the related Allergy entity
-                    Severity = pa.Allergy.Severity, // Access Severity from the related Allergy entity
+                    Allergen = pa.Allergy.Allergen, 
+                    Severity = pa.Allergy.Severity, 
                     Reaction = pa.Allergy.Reaction,
                     
                     
@@ -92,8 +91,8 @@ namespace MedicalID.Backend.Controllers
             // STEP 3: Create and add the new PatientAllergy record
             var patientAllergy = new PatientAllergy
             {
-                PatientID = patient.ID, // Use the patient's internal ID
-                AllergyID = allergy.AllergyID // Use the ID from the found allergy
+                PatientID = patient.ID, 
+                AllergyID = allergy.AllergyID 
                 
             };
 
@@ -117,13 +116,12 @@ namespace MedicalID.Backend.Controllers
                 return Unauthorized("Authentication failed: Invalid patient ID format in token.");
             }
 
-            // Find the patient by their internal ID (int primary key)
+            
             var patient = await _context.Patients.FirstOrDefaultAsync(p => p.ID == patientIdAsInt);
             if (patient == null)
                 return Unauthorized("Patient not found.");
 
-            // Find the record using patient.ID and the provided allergyId
-            // Assuming FindAsync works on a composite key (PatientID, AllergyID)
+            
             var record = await _context.PatientAllergies.FindAsync(patient.ID, allergyId);
             if (record == null)
                 return NotFound("Patient allergy record not found for this patient and allergy ID.");

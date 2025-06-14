@@ -5,7 +5,7 @@ using MedicalID.Backend.Models.JoinModels;
 public class Allergy
 {
     [Key]
-    public int AllergyID { get; set; } // ✅ Required
+    public int AllergyID { get; set; } 
 
     public string Allergen { get; set; }
     public string Severity { get; set; }

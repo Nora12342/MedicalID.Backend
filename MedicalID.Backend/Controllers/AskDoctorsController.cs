@@ -26,7 +26,7 @@ namespace MedicalID.Backend.Controllers
             var doctorId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             var messages = await _context.AskDoctors
-                //.Where(m => m.DoctorID == doctorId)
+                
                 .Include(m => m.Patient)
                 .Include(m => m.Doctor)
                 .Select(m => new AskDoctorDto
@@ -49,12 +49,10 @@ namespace MedicalID.Backend.Controllers
         [HttpGet("doctor")]
         public async Task<IActionResult> GetMyQuestions()
         {
-            //var patientIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            //if (!int.TryParse(patientIdStr, out int patientId))
-            //    return Unauthorized("Invalid patient ID in token.");
+           
 
             var messages = await _context.AskDoctors
-                //.Where(m => m.PatientID == patientId)
+                
                 .Include(m => m.Doctor)
                 .Include(m => m.Patient)
                 .Select(m => new AskDoctorDto
@@ -89,11 +87,7 @@ namespace MedicalID.Backend.Controllers
                 return Unauthorized("Invalid patient ID in token."); // Should not happen with valid tokens
             }
 
-            // Remove or comment out the hardcoded line:
-            // var patientId = 1;
-
-            // ✅ Security check: Ensure the request is for the authenticated patient themselves
-            // This is important! A patient should only be able to ask a question for their own ID.
+            
             if (patientId != dto.PatientID)
             {
                 return Forbid("You can only submit questions for your own patient ID.");
