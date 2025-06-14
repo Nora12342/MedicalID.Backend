@@ -57,7 +57,7 @@ namespace MedicalIDSystem.Controllers
 
             var appointments = await _context.Appointments
                 .Where(a => a.DoctorID == doctorId)
-                .Include(a => a.Patient)
+                .Include(a => a.Patient) // Assuming you have a navigation property named 'Patient'
                 .ToListAsync();
 
             return Ok(appointments.Select(a => new AppointmentDTO
@@ -65,6 +65,7 @@ namespace MedicalIDSystem.Controllers
                 AppointmentID = a.AppointmentID,
                 PatientID = a.PatientID,
                 DoctorID = a.DoctorID,
+                PatientName = $"{a.Patient.FName} {a.Patient.LName}", // Assuming Patient has FirstName and LastName
                 AppointmentDate = a.AppointmentDate,
                 AppointmentType = a.AppointmentType,
                 Status = a.Status,
@@ -72,7 +73,6 @@ namespace MedicalIDSystem.Controllers
             }));
         }
 
-        // 🧑‍🦰 PATIENT: View their appointments
         [Authorize(Roles = "Patient")]
         [HttpGet("patient")]
         public async Task<ActionResult<IEnumerable<AppointmentDTO>>> GetPatientAppointments()
@@ -84,6 +84,7 @@ namespace MedicalIDSystem.Controllers
 
             var appointments = await _context.Appointments
                 .Where(a => a.PatientID == patientId)
+                .Include(a => a.Doctor) // Assuming you have a navigation property named 'Doctor'
                 .ToListAsync();
 
             return Ok(appointments.Select(a => new AppointmentDTO
@@ -91,6 +92,7 @@ namespace MedicalIDSystem.Controllers
                 AppointmentID = a.AppointmentID,
                 PatientID = a.PatientID,
                 DoctorID = a.DoctorID,
+                DoctorName = $"{a.Doctor.FName} {a.Doctor.LName}", // Assuming Doctor has FirstName and LastName
                 AppointmentDate = a.AppointmentDate,
                 AppointmentType = a.AppointmentType,
                 Status = a.Status,
